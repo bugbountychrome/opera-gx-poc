@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opera GX - Sign In</title>
+    <style>
+        body { background-color: #1e1e24; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { text-align: center; width: 85%; max-width: 400px; background: #2c2c36; padding: 40px 20px; border-radius: 12px; }
+        .logo { color: #ff1b2d; font-size: 48px; font-weight: 900; margin-bottom: 10px; }
+        h2 { margin-top: 0; font-size: 20px; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 6px; border: none; background: #1e1e24; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: #ff1b2d; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; margin-top: 20px; }
+        .fake-alert { display: none; margin-top: 20px; padding: 15px; background: rgba(255, 27, 45, 0.1); border: 1px solid #ff1b2d; border-radius: 6px; color: #ff1b2d; font-weight: bold; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">Opera GX</div>
+        <h2>Welcome Back</h2>
+        <form onsubmit="event.preventDefault(); alert('Simulasi Phishing: Kredensial berhasil dicuri!');">
+            <input type="email" placeholder="Email address" required>
+            <input type="password" placeholder="Password" required>
+            <button type="submit">Sign In</button>
+        </form>
+        <div id="poc-alert" class="fake-alert"></div>
+        <script>
+            if (window.location.href.includes('@')) {
+                const alertBox = document.getElementById('poc-alert');
+                alertBox.style.display = 'block';
+                alertBox.innerHTML = "⚠️ PoC Success: Address Bar Spoofing Detected!<br>Actual Host: <b>" + window.location.host + "</b>";
+            }
+        </script>
+    </div>
+</body>
+</html>
