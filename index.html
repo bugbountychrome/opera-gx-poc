@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -49,7 +49,7 @@
 </head>
 <body>
   <h1>🔊 TTS AutoPlay Test</h1>
-  <div id="status" class="status">Menunggu...</div>
+  <div id="status" class="status">Waiting...</div>
   <div id="log"></div>
 
 <script>
@@ -72,46 +72,46 @@ function setStatus(msg, ok) {
 }
 
 // ============================================
-// TEKS YANG AKAN DIBACAKAN
+// TEXT TO BE SPOKEN
 // ============================================
-const TEKS = "Halo, ini adalah tes text to speech otomatis tanpa interaksi user.";
+const TEXT = "Hello, this is an automated text to speech test with no user interaction.";
 
 // ============================================
-// METODE 1: Web Speech API (SpeechSynthesis)
+// METHOD 1: Web Speech API (SpeechSynthesis)
 // ============================================
 function trySpeechSynthesis() {
-  log('Mencoba SpeechSynthesis...', 'info');
+  log('Trying SpeechSynthesis...', 'info');
   
   if (!('speechSynthesis' in window)) {
-    log('SpeechSynthesis tidak didukung', 'err');
+    log('SpeechSynthesis not supported', 'err');
     return false;
   }
 
-  // Trik: trigger speak saat voices belum load kadang gagal
+  // Trick: speaking before voices load sometimes fails
   const speak = () => {
-    const utter = new SpeechSynthesisUtterance(TEKS);
-    utter.lang = 'id-ID';
+    const utter = new SpeechSynthesisUtterance(TEXT);
+    utter.lang = 'en-US';
     utter.rate = 1;
     utter.pitch = 1;
     utter.volume = 1;
 
     utter.onstart = () => {
-      log('✅ SpeechSynthesis STARTED (autoplay berhasil!)', 'ok');
+      log('✅ SpeechSynthesis STARTED (autoplay succeeded!)', 'ok');
       setStatus('✅ Audio playing via SpeechSynthesis', true);
     };
-    utter.onend = () => log('SpeechSynthesis selesai', 'ok');
+    utter.onend = () => log('SpeechSynthesis finished', 'ok');
     utter.onerror = (e) => {
       log(`❌ SpeechSynthesis error: ${e.error}`, 'err');
-      setStatus('❌ SpeechSynthesis gagal: ' + e.error, false);
+      setStatus('❌ SpeechSynthesis failed: ' + e.error, false);
     };
 
     window.speechSynthesis.speak(utter);
-    log('speak() dipanggil', 'info');
+    log('speak() called', 'info');
   };
 
-  // Chrome: voices sering kosong saat pertama, tunggu voiceschanged
+  // Chrome: voices are often empty on first call, wait for voiceschanged
   if (speechSynthesis.getVoices().length === 0) {
-    log('Voices belum loaded, menunggu voiceschanged...', 'warn');
+    log('Voices not loaded yet, waiting for voiceschanged...', 'warn');
     speechSynthesis.onvoiceschanged = () => {
       log(`Voices loaded: ${speechSynthesis.getVoices().length}`, 'info');
       speak();
@@ -127,13 +127,13 @@ function trySpeechSynthesis() {
 }
 
 // ============================================
-// METODE 2: Audio element dengan data URI / remote
-// (untuk tes autoplay policy audio biasa)
+// METHOD 2: Audio element with data URI / remote
+// (for testing standard audio autoplay policy)
 // ============================================
 function tryAudioElement() {
-  log('Mencoba Audio element autoplay...', 'info');
+  log('Trying Audio element autoplay...', 'info');
   
-  // Pakai file audio silent / beep pendek (base64 WAV 0.5s silent)
+  // Silent WAV base64 (0.5s)
   const silentWav = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
   
   const audio = new Audio(silentWav);
@@ -143,55 +143,55 @@ function tryAudioElement() {
   if (playPromise !== undefined) {
     playPromise
       .then(() => {
-        log('✅ Audio element autoplay BERHASIL', 'ok');
+        log('✅ Audio element autoplay SUCCEEDED', 'ok');
       })
       .catch(err => {
-        log(`❌ Audio element autoplay DIBLOKIR: ${err.name} - ${err.message}`, 'err');
-        log('(Ini normal — browser butuh user gesture)', 'warn');
+        log(`❌ Audio element autoplay BLOCKED: ${err.name} - ${err.message}`, 'err');
+        log('(This is normal — browser requires a user gesture)', 'warn');
       });
   }
 }
 
 // ============================================
-// METODE 3: Tricky — coba resume() setelah delay
-// Beberapa browser mengizinkan setelah tab visible/focus
+// METHOD 3: Trick — try resume() after delay
+// Some browsers allow it once tab is visible/focused
 // ============================================
 function tryResumeTrick() {
-  log('Mencoba resume() trick...', 'info');
+  log('Trying resume() trick...', 'info');
   window.speechSynthesis.resume();
   
-  // Coba panggil ulang speak jika paused
+  // Retry speak if paused
   if (window.speechSynthesis.paused) {
-    log('SpeechSynthesis paused, mencoba resume', 'warn');
+    log('SpeechSynthesis paused, attempting resume', 'warn');
     window.speechSynthesis.resume();
   }
 }
 
 // ============================================
-// JALANKAN SEMUA
+// RUN EVERYTHING
 // ============================================
 window.addEventListener('load', () => {
-  log('Page loaded, mulai autoplay test', 'info');
+  log('Page loaded, starting autoplay test', 'info');
   log(`User agent: ${navigator.userAgent}`, 'info');
   
-  // Metode 1
+  // Method 1
   trySpeechSynthesis();
   
-  // Metode 2 (paralel)
+  // Method 2 (parallel)
   tryAudioElement();
   
-  // Metode 3 (delayed)
+  // Method 3 (delayed)
   setTimeout(tryResumeTrick, 1000);
   
   // Monitor state
   setInterval(() => {
     if (window.speechSynthesis.speaking) {
-      setStatus('🔊 Sedang berbicara...', true);
+      setStatus('🔊 Speaking...', true);
     }
   }, 2000);
 });
 
-// Log visibility state (buat riset bug bounty)
+// Log visibility state (for bug bounty research)
 document.addEventListener('visibilitychange', () => {
   log(`Visibility: ${document.visibilityState}`, 'warn');
 });
