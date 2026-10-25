@@ -3,231 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TTS AutoPlay Edge Android Bypass</title>
+<title>PoC: Web Speech API Autoplay Bypass Discrepancy</title>
 <style>
-  body {
-    font-family: system-ui, sans-serif;
-    background: #0d1117;
-    color: #c9d1d9;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    margin: 0;
-    padding: 20px;
-  }
-  h1 { color: #58a6ff; font-size: 1.5rem; text-align: center; }
-  .status {
-    padding: 12px 20px;
-    border-radius: 8px;
-    background: #161b22;
-    border: 1px solid #30363d;
-    margin: 10px;
-    font-family: monospace;
-    text-align: center;
-  }
-  .ok { border-color: #238636; color: #3fb950; }
-  .err { border-color: #da3633; color: #f85149; }
-  .warn { border-color: #d29922; color: #d29922; }
-  #log {
-    max-width: 600px;
-    width: 100%;
-    background: #161b22;
-    border: 1px solid #30363d;
-    border-radius: 8px;
-    padding: 15px;
-    font-family: monospace;
-    font-size: 12px;
-    max-height: 400px;
-    overflow-y: auto;
-  }
-  .log-line { margin: 3px 0; word-wrap: break-word; }
-  .log-info { color: #58a6ff; }
-  .log-ok { color: #3fb950; }
-  .log-err { color: #f85149; }
-  .log-warn { color: #d29922; }
+  body { font-family: system-ui, sans-serif; background: #f4f4f9; color: #333; padding: 20px; text-align: center; }
+  .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+  h1 { font-size: 1.2rem; color: #d32f2f; }
+  .log { text-align: left; background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; margin-top: 20px; }
+  .success { color: #4caf50; font-weight: bold; }
+  .error { color: #f44336; font-weight: bold; }
 </style>
 </head>
 <body>
-  <h1>🔊 TTS AutoPlay Test<br><small style="color:#8b949e; font-size:0.8rem;">(Edge Android Bypass Edition)</small></h1>
-  <div id="status" class="status">Waiting...</div>
-  <div id="log"></div>
+<div class="container">
+  <h1>Web Speech API AutoPlay PoC</h1>
+  <p>This page attempts to play audio via Web Speech API immediately on load, without any user interaction.</p>
+  <p><strong>Instructions for Triager:</strong><br>
+  1. Open this file on Chrome Android. (Observe: Audio plays).<br>
+  2. Open this file on Edge Android. (Observe: Audio is blocked, logs error).</p>
+  
+  <div id="log" class="log"></div>
+</div>
 
 <script>
-const statusEl = document.getElementById('status');
 const logEl = document.getElementById('log');
-
-function log(msg, type = 'info') {
-  const line = document.createElement('div');
-  line.className = `log-line log-${type}`;
-  const t = new Date().toLocaleTimeString();
-  line.textContent = `[${t}] ${msg}`;
-  logEl.appendChild(line);
-  logEl.scrollTop = logEl.scrollHeight;
-  console.log(`[${type}] ${msg}`);
+function log(msg, isError = false) {
+  const div = document.createElement('div');
+  div.innerHTML = `[${new Date().toLocaleTimeString()}] <span class="${isError ? 'error' : ''}">${msg}</span>`;
+  logEl.appendChild(div);
 }
 
-function setStatus(msg, typeClass) {
-  statusEl.textContent = msg;
-  statusEl.className = 'status ' + typeClass;
-}
-
-const TEXT = "This is an automated bypass test on Edge Android.";
-
-// ============================================
-// METHOD 1: Standard SpeechSynthesis (Untuk baseline)
-// ============================================
-function trySpeechSynthesis() {
-  log('Trying Standard SpeechSynthesis...', 'info');
+window.addEventListener('load', () => {
+  log(`User Agent: ${navigator.userAgent}`);
+  
   if (!('speechSynthesis' in window)) {
-    log('SpeechSynthesis not supported', 'err');
+    log("SpeechSynthesis not supported.", true);
     return;
   }
 
-  const speak = () => {
-    const utter = new SpeechSynthesisUtterance(TEXT);
-    utter.lang = 'en-US';
-    utter.onstart = () => {
-      log('✅ Standard SpeechSynthesis STARTED', 'ok');
-      setStatus('✅ Standard TTS Playing', 'ok');
-    };
-    utter.onerror = (e) => log(`❌ Standard TTS error: ${e.error}`, 'err');
-    window.speechSynthesis.speak(utter);
-    log('Standard speak() called', 'info');
+  log("Attempting to speak automatically...");
+  
+  const utter = new SpeechSynthesisUtterance("Hello, if you hear this without clicking anything, the autoplay bypass worked.");
+  utter.lang = 'en-US';
+  
+  utter.onstart = () => {
+    log("✅ SUCCESS: Audio started playing automatically without user gesture!", false);
+  };
+  
+  utter.onerror = (e) => {
+    log(`❌ FAILED: Audio blocked. Error: ${e.error}`, true);
   };
 
-  if (speechSynthesis.getVoices().length === 0) {
-    speechSynthesis.onvoiceschanged = () => {
-      log(`Voices loaded: ${speechSynthesis.getVoices().length}`, 'info');
-      speak();
-    };
-    setTimeout(() => { if (speechSynthesis.getVoices().length > 0) speak(); }, 500);
-  } else {
-    speak();
-  }
-}
-
-// ============================================
-// METHOD 2: AudioContext Autoplay (Test policy audio biasa)
-// ============================================
-function tryAudioElement() {
-  log('Trying Audio element autoplay...', 'info');
-  const silentWav = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
-  const audio = new Audio(silentWav);
-  audio.autoplay = true;
-  
-  audio.play().then(() => {
-    log('✅ Audio element autoplay SUCCEEDED', 'ok');
-  }).catch(err => {
-    log(`❌ Audio element autoplay BLOCKED: ${err.name}`, 'err');
-  });
-}
-
-// ============================================
-// METHOD 3: EDGE ANDROID SPECIFIC BYPASS
-// (Synthetic User Activation + Dummy Speak)
-// ============================================
-function tryEdgeAndroidBypass() {
-  log('--- Starting Edge Android Bypass ---', 'warn');
-  setStatus('Trying Edge Bypass...', 'warn');
-
-  // 1. Kirim synthetic touch & pointer events
-  try {
-    const touchEvent = new TouchEvent('touchstart', {
-      bubbles: true, cancelable: true, view: window
-    });
-    document.body.dispatchEvent(touchEvent);
-
-    const pointerEvent = new PointerEvent('pointerdown', {
-      bubbles: true, cancelable: true, view: window, pointerType: 'touch'
-    });
-    document.body.dispatchEvent(pointerEvent);
-    log('Synthetic Touch/Pointer events dispatched.', 'warn');
-  } catch (e) {
-    log(`Failed to dispatch synthetic events: ${e.message}`, 'err');
-  }
-
-  // 2. Jeda sedikit agar Edge "sadar" ada aktivitas
+  // Delay slightly to allow voices to load on some browsers
   setTimeout(() => {
-    // Cek status userActivation
-    if (navigator.userActivation) {
-      log(`userActivation: active=${navigator.userActivation.isActive}, hasBeenActive=${navigator.userActivation.hasBeenActive}`, 'info');
-    }
-
-    // 3. Trik Dummy Speak untuk inisialisasi mesin
-    const dummy = new SpeechSynthesisUtterance(" ");
-    dummy.volume = 0; // Pastikan suara dummy tidak terdengar
-    window.speechSynthesis.speak(dummy);
-    
-    setTimeout(() => {
-      window.speechSynthesis.cancel(); // Langsung cancel dummy
-      log('Dummy speak() cancelled.', 'info');
-
-      // 4. Speak text asli
-      const utter = new SpeechSynthesisUtterance(TEXT);
-      utter.lang = 'en-US';
-      utter.rate = 1;
-      utter.pitch = 1;
-
-      utter.onstart = () => {
-        log('✅ EDGE ANDROID BYPASS BERHASIL! Suara keluar.', 'ok');
-        setStatus('✅ Edge Bypass SUCCESS!', 'ok');
-      };
-      
-      utter.onerror = (e) => {
-        log(`❌ Edge Bypass GAGAL. Error: ${e.error}`, 'err');
-        setStatus(`❌ Edge Bypass Failed: ${e.error}`, 'err');
-      };
-
-      window.speechSynthesis.speak(utter);
-      log('Edge Bypass speak() dipanggil.', 'info');
-    }, 100);
+    window.speechSynthesis.speak(utter);
   }, 500);
-}
-
-// ============================================
-// METHOD 4: AudioContext Unlock Trick
-// ============================================
-function tryAudioContext() {
-  log('Trying AudioContext unlock...', 'info');
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContext) return log('AudioContext not supported', 'err');
-
-  const ctx = new AudioContext();
-  log(`AudioContext initial state: ${ctx.state}`, 'info');
-
-  if (ctx.state === 'suspended') {
-    ctx.resume().then(() => {
-      log(`✅ AudioContext resumed! State: ${ctx.state}`, 'ok');
-    }).catch(e => log(`❌ AudioContext resume failed: ${e.message}`, 'err'));
-  } else {
-    log(`AudioContext already running: ${ctx.state}`, 'ok');
-  }
-}
-
-// ============================================
-// RUN ALL METHODS
-// ============================================
-window.addEventListener('load', () => {
-  log('Page loaded. Starting tests...', 'info');
-  log(`UA: ${navigator.userAgent}`, 'info');
-
-  // Jalankan tes dasar
-  trySpeechSynthesis();
-  tryAudioElement();
-  tryAudioContext();
-
-  // Jalankan trik bypass setelah jeda (biarkan tes dasar selesai dulu)
-  setTimeout(tryEdgeAndroidBypass, 2000);
 });
-
-// Monitor status berkala
-setInterval(() => {
-  if (window.speechSynthesis.speaking) {
-    setStatus('🔊 Sedang berbicara...', 'ok');
-  }
-}, 1500);
 </script>
 </body>
 </html>
