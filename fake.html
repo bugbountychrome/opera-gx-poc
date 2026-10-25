@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in - Google Accounts</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 0; text-align: center; }
+        .container { max-width: 400px; margin: 0 auto; padding-top: 50px; }
+        .logo { width: 80px; margin-bottom: 20px; }
+        h2 { font-weight: 400; font-size: 24px; margin-bottom: 5px; }
+        p { font-size: 15px; color: #202124; margin-bottom: 30px; }
+        input { width: 85%; padding: 15px; margin-bottom: 15px; border: 1px solid #dadce0; border-radius: 4px; box-sizing: border-box; font-size: 16px; outline: none; }
+        input:focus { border: 2px solid #1a73e8; padding: 14px; }
+        .btn { background: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 4px; font-size: 14px; font-weight: bold; float: right; margin-right: 7.5%; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="https://ssl.gstatic.com/ui/v1/icons/mail/rfr/logo_gmail_lockup_default_1x_r5.png" class="logo">
+        <h2>Sign in</h2>
+        <p>to continue to Gmail</p>
+        <input type="text" id="email" placeholder="Email or phone" autocomplete="off">
+        <input type="password" id="password" placeholder="Password" autocomplete="off">
+        <button class="btn" onclick="alert('POC SUKSES! Data ditangkap: ' + document.getElementById('email').value)">Next</button>
+    </div>
+</body>
+</html>
