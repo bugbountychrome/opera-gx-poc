@@ -3,17 +3,17 @@
 <head>
     <title>Loading...</title>
     <style>
-        /* Bikin layar blank hitam biar fokus ke alert */
         body { background-color: #000; margin: 0; }
     </style>
 </head>
 <body>
     <script>
-        // Begitu halaman dimuat, langsung tembak alert bawaan browser
+        // 1. Tembak alert bawaan browser
         alert("Opera is down :(\n\ngo to new-opera.com");
-        
-        // Opsional: Setelah alert diklik OK, halaman bisa diarahkan ke link lain
-        // window.location.href = "https://example.com"; 
+
+        // 2. Setelah alert diklik 'OK', langsung lempar ke situs resmi Opera
+        // (Trik: Redirect dijalankan setelah alert terhenti)
+        window.location.href = "https://accounts.opera.com";
     </script>
 </body>
 </html>
