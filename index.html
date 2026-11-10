@@ -1,63 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PoC: Web Speech API Autoplay Bypass Discrepancy</title>
-<style>
-  body { font-family: system-ui, sans-serif; background: #f4f4f9; color: #333; padding: 20px; text-align: center; }
-  .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-  h1 { font-size: 1.2rem; color: #d32f2f; }
-  .log { text-align: left; background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; margin-top: 20px; }
-  .success { color: #4caf50; font-weight: bold; }
-  .error { color: #f44336; font-weight: bold; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Continue to Opera GX</title>
+    <style>
+        body { 
+            background-color: #1e1e24; 
+            color: white; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            text-align: center;
+        }
+        .container {
+            width: 85%;
+            max-width: 400px;
+        }
+        .logo { 
+            color: #ff1b2d; 
+            font-size: 56px; 
+            font-weight: 900; 
+            margin-bottom: 20px; 
+            letter-spacing: -1px; 
+            text-shadow: 0 0 20px rgba(255,27,45,0.3);
+        }
+        h2 { 
+            font-size: 22px; 
+            margin-bottom: 10px; 
+        }
+        p { 
+            color: #a0a0a0; 
+            font-size: 15px; 
+            margin-bottom: 40px; 
+        }
+        .btn {
+            display: inline-block;
+            background-color: #ff1b2d;
+            color: white;
+            text-decoration: none;
+            padding: 16px 40px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn:hover { background-color: #d61021; }
+        .btn:active { transform: scale(0.98); }
+    </style>
 </head>
 <body>
-<div class="container">
-  <h1>Web Speech API AutoPlay PoC</h1>
-  <p>This page attempts to play audio via Web Speech API immediately on load, without any user interaction.</p>
-  <p><strong>Instructions for Triager:</strong><br>
-  1. Open this file on Chrome Android. (Observe: Audio plays).<br>
-  2. Open this file on Edge Android. (Observe: Audio is blocked, logs error).</p>
-  
-  <div id="log" class="log"></div>
-</div>
-
-<script>
-const logEl = document.getElementById('log');
-function log(msg, isError = false) {
-  const div = document.createElement('div');
-  div.innerHTML = `[${new Date().toLocaleTimeString()}] <span class="${isError ? 'error' : ''}">${msg}</span>`;
-  logEl.appendChild(div);
-}
-
-window.addEventListener('load', () => {
-  log(`User Agent: ${navigator.userAgent}`);
-  
-  if (!('speechSynthesis' in window)) {
-    log("SpeechSynthesis not supported.", true);
-    return;
-  }
-
-  log("Attempting to speak automatically...");
-  
-  const utter = new SpeechSynthesisUtterance("Hello, if you hear this without clicking anything, the autoplay bypass worked.");
-  utter.lang = 'en-US';
-  
-  utter.onstart = () => {
-    log("✅ SUCCESS: Audio started playing automatically without user gesture!", false);
-  };
-  
-  utter.onerror = (e) => {
-    log(`❌ FAILED: Audio blocked. Error: ${e.error}`, true);
-  };
-
-  // Delay slightly to allow voices to load on some browsers
-  setTimeout(() => {
-    window.speechSynthesis.speak(utter);
-  }, 500);
-});
-</script>
+    <div class="container">
+        <div class="logo">Opera GX</div>
+        <h2>Secure Login Portal</h2>
+        <p>Click the button below to securely continue to your Opera GX account.</p>
+        
+        <!-- Ini adalah tombol spoofing -->
+        <a href="https://vtp.operagx.gg.opera.login.accounts.opera.com@bugbountychrome.github.io/opera-gx-poc/login.html" class="btn">
+            Continue to Login
+        </a>
+    </div>
 </body>
 </html>
